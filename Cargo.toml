@@ -1,0 +1,35 @@
+[package]
+
+name = "sdl2_game_window"
+version = "0.0.0"
+readme = "README.md"
+authors = [
+    "bvssvni <bvssvni@gmail.com>",
+    "Coeuvre <coeuvre@gmail.com>",
+    "gmorenz",
+    "leonkunert <info@leonkunert.de>",
+    "mitchmindtree <me@michellnordine.com>",
+    "Christiandh",
+    "Apointos",
+    "ccgn",
+    "reem",
+    "TyOverby <ty@pre-alpha.com>"]
+tags = []
+
+[dependencies.sdl2]
+
+git = "https://github.com/AngryLawyer/rust-sdl2"
+
+[dependencies.piston]
+
+git = "https://github.com/pistondevelopers/piston"
+
+[dependencies.gl]
+
+git = "https://github.com/bjz/gl-rs"
+
+[[lib]]
+
+name = "sdl2_game_window"
+path = "src/lib.rs"
+
