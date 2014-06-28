@@ -1,71 +1,49 @@
-//! A window implemented by SDL2 back-end.
+//! RenderWindow and ConcurrentWindow implemented by SDL2 back-end.
 
 // External crates.
 use std;
 use sdl2;
-use piston::GameWindow;
-use piston::event;
-use piston::GameWindowSettings;
-use piston::keyboard;
-use piston::mouse;
+use piston::{
+    GameWindow,
+    RenderWindow,
+    GameWindowSettings,
+    event,
+};
 use gl;
 
+// Local Crate.
+use game_window_sdl2::sdl2_map_key;
+use game_window_sdl2::sdl2_map_mouse;
+
 /// A widow implemented by SDL2 back-end.
-pub struct GameWindowSDL2 {
+pub struct RenderWindowSDL2 {
     window: sdl2::video::Window,
     // Allow dead code because this keeps track of the OpenGL context.
     // Will be released on drop.
     #[allow(dead_code)]
     context: sdl2::video::GLContext,
+}
+
+impl RenderWindow for RenderWindowSDL2 {
+    fn swap_buffers(&self) {
+        self.window.gl_swap_window();
+    }
+}
+
+/// A window implemented by SDL2 back-end.
+pub struct ConcurrentWindowSDL2 {
     settings: GameWindowSettings,
     should_close: bool,
     last_pressed_key: Option<sdl2::keycode::KeyCode>,
 }
 
-impl GameWindowSDL2 {
-    /// Creates a new game window for SDL2.
-    pub fn new(settings: GameWindowSettings) -> GameWindowSDL2 {
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, 3);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, 3);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextProfileMask, sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int);
-
-        let window = sdl2::video::Window::new(
-            settings.title.as_slice(),
-            sdl2::video::PosCentered,
-            sdl2::video::PosCentered,
-            settings.size[0] as int,
-            settings.size[1] as int,
-            sdl2::video::OpenGL
-        ).unwrap();
-
-        let context = window.gl_create_context().unwrap();
-
-        // Load the OpenGL function pointers
-        gl::load_with(|s| unsafe {
-            std::mem::transmute(sdl2::video::gl_get_proc_address(s))
-        });
-
-        GameWindowSDL2 {
-            window: window,
-            context: context,
-            settings: settings,
-            should_close: false,
-            last_pressed_key: None,
-        }
-    }
-}
-
-impl GameWindow for GameWindowSDL2 {
+impl GameWindow for ConcurrentWindowSDL2 {
     fn get_settings<'a>(&'a self) -> &'a GameWindowSettings {
         &self.settings
     }
 
     fn should_close(&self) -> bool {
         self.should_close
-    }
-
-    fn swap_buffers(&self) {
-        self.window.gl_swap_window();
     }
 
     fn poll_event(&mut self) -> event::Event {
@@ -118,19 +96,41 @@ impl GameWindow for GameWindowSDL2 {
     }
 }
 
-fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
-    use std::num::FromPrimitive;
-    FromPrimitive::from_u64(keycode.code() as u64).unwrap()
-}
+impl ConcurrentWindowSDL2 {
+    /// Creates a new game window for SDL2.
+    pub fn new(settings: GameWindowSettings) -> (ConcurrentWindowSDL2, RenderWindowSDL2) {
+        sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, 3);
+        sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, 3);
+        sdl2::video::gl_set_attribute(sdl2::video::GLContextProfileMask, sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int);
 
-fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> mouse::Button {
-    match button {
-        sdl2::mouse::LeftMouse => mouse::Left,
-        sdl2::mouse::RightMouse => mouse::Right,
-        sdl2::mouse::MiddleMouse => mouse::Middle,
-        sdl2::mouse::X1Mouse => mouse::X1,
-        sdl2::mouse::X2Mouse => mouse::X2,
-        sdl2::mouse::UnknownMouse(_) => mouse::Unknown,
+        let window = sdl2::video::Window::new(
+            settings.title.as_slice(),
+            sdl2::video::PosCentered,
+            sdl2::video::PosCentered,
+            settings.size[0] as int,
+            settings.size[1] as int,
+            sdl2::video::OpenGL
+        ).unwrap();
+
+        let context = window.gl_create_context().unwrap();
+
+        // Load the OpenGL function pointers
+        gl::load_with(|s| unsafe {
+            std::mem::transmute(sdl2::video::gl_get_proc_address(s))
+        });
+
+        return (
+            ConcurrentWindowSDL2 {
+                settings: settings,
+                should_close: false,
+                last_pressed_key: None,
+            },
+            RenderWindowSDL2 {
+                window: window,
+                context: context,
+            }
+        );
+                
     }
 }
 
