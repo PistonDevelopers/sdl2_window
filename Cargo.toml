@@ -22,7 +22,7 @@ git = "https://github.com/AngryLawyer/rust-sdl2"
 
 [dependencies.piston]
 
-git = "https://github.com/pistondevelopers/piston"
+git = "https://github.com/PistonDevelopers/piston"
 
 [dependencies.gl]
 
