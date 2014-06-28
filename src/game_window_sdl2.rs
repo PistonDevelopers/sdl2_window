@@ -109,6 +109,9 @@ impl GameWindow for GameWindowSDL2 {
                     Some((dx as f64, dy as f64))
                 );
             },
+            sdl2::event::MouseWheelEvent(_, _, _, x, y) => {
+                return event::MouseScrolled(x as f64, y as f64);
+            },
             _ => {},
         }
         event::NoEvent
