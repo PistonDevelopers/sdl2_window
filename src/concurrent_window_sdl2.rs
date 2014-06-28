@@ -6,9 +6,9 @@ use sdl2;
 use piston::{
     GameWindow,
     RenderWindow,
+    GameWindowSettings,
+    event,
 };
-use piston::event;
-use piston::GameWindowSettings;
 use gl;
 
 // Local Crate.

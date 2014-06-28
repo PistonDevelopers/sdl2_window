@@ -1,17 +1,15 @@
 //! A window implemented by SDL2 back-end.
 
 // External crates.
-use std;
 use sdl2;
 use piston::{
     GameWindow,
     RenderWindow,
+    GameWindowSettings,
+    event,
+    keyboard,
+    mouse,
 };
-use piston::event;
-use piston::GameWindowSettings;
-use piston::keyboard;
-use piston::mouse;
-use gl;
 
 // Local Crate.
 
