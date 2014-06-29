@@ -99,6 +99,7 @@ impl GameWindow for ConcurrentWindowSDL2 {
 impl ConcurrentWindowSDL2 {
     /// Creates a new game window for SDL2.
     pub fn new(settings: GameWindowSettings) -> (ConcurrentWindowSDL2, RenderWindowSDL2) {
+        sdl2::init(sdl2::InitEverything);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, 3);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, 3);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextProfileMask, sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int);
