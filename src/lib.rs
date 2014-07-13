@@ -1,4 +1,4 @@
-#![crate_id = "sdl2_game_window"]
+#![crate_name = "sdl2_game_window"]
 #![deny(missing_doc)]
 
 //! A SDL2 window back-end for the Piston game engine.
