@@ -28,6 +28,10 @@ impl RenderWindow for RenderWindowSDL2 {
     fn swap_buffers(&self) {
         self.window.gl_swap_window();
     }
+
+    fn capture_cursor(&mut self, enabled: bool) {
+        sdl2::mouse::set_relative_mouse_mode(enabled)
+    }
 }
 
 /// A window implemented by SDL2 back-end.
