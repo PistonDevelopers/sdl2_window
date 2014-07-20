@@ -49,6 +49,10 @@ impl GameWindow for GameWindowSDL2 {
         self.render_window.swap_buffers()
     }
 
+    fn capture_cursor(&mut self, enabled: bool) {
+        self.render_window.capture_cursor(enabled)
+    }
+
     fn poll_event(&mut self) -> event::Event {
         self.concurrent_window.poll_event()
     }
