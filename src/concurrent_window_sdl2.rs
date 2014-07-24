@@ -116,6 +116,9 @@ impl ConcurrentWindowSDL2 {
             settings.size[1] as int,
             sdl2::video::OpenGL
         ).unwrap();
+        if settings.fullscreen {
+            window.set_fullscreen(sdl2::video::FTTrue);
+        }
 
         let context = window.gl_create_context().unwrap();
 
