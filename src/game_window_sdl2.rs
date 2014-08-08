@@ -18,11 +18,12 @@ use concurrent_window_sdl2::{
     ConcurrentWindowSDL2,
 };
 
-
 /// A widow implemented by SDL2 back-end.
 pub struct GameWindowSDL2 {
-    concurrent_window: ConcurrentWindowSDL2,
-    render_window: RenderWindowSDL2,
+  /// concurrent window used for events
+  pub concurrent_window: ConcurrentWindowSDL2,
+  /// window used for rendering
+  pub render_window: RenderWindowSDL2,
 }
 
 impl GameWindowSDL2 {
