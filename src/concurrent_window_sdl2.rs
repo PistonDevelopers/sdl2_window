@@ -57,7 +57,7 @@ impl GameWindow for ConcurrentWindowSDL2 {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 match self.last_pressed_key {
-                    Some(x) if x == key => return event::NoEvent,
+                    Some(x) if x == key => return self.poll_event(),
                     _ => {},
                 };
                 self.last_pressed_key = Some(key);
