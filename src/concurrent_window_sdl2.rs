@@ -17,11 +17,12 @@ use game_window_sdl2::sdl2_map_mouse;
 
 /// A widow implemented by SDL2 back-end.
 pub struct RenderWindowSDL2 {
-    window: sdl2::video::Window,
-    // Allow dead code because this keeps track of the OpenGL context.
-    // Will be released on drop.
-    #[allow(dead_code)]
-    context: sdl2::video::GLContext,
+  /// SDL window handle
+  pub window: sdl2::video::Window,
+  /// Allow dead code because this keeps track of the OpenGL context.
+  /// Will be released on drop.
+  #[allow(dead_code)]
+  pub context: sdl2::video::GLContext,
 }
 
 impl RenderWindow for RenderWindowSDL2 {
@@ -57,7 +58,7 @@ impl GameWindow for ConcurrentWindowSDL2 {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 match self.last_pressed_key {
-                    Some(x) if x == key => return event::NoEvent,
+                    Some(x) if x == key => return self.poll_event(),
                     _ => {},
                 };
                 self.last_pressed_key = Some(key);
