@@ -47,6 +47,10 @@ impl GameWindow for ConcurrentWindowSDL2 {
         &self.settings
     }
 
+    fn close(&mut self) {
+        self.should_close = true;
+    }
+
     fn should_close(&self) -> bool {
         self.should_close
     }

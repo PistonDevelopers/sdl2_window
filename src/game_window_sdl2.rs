@@ -42,6 +42,10 @@ impl GameWindow for GameWindowSDL2 {
         self.concurrent_window.get_settings()
     }
 
+    fn close(&mut self) {
+        self.concurrent_window.close()
+    }
+
     fn should_close(&self) -> bool {
         self.concurrent_window.should_close()
     }
