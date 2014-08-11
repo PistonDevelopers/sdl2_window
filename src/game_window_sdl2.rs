@@ -46,6 +46,10 @@ impl GameWindow for GameWindowSDL2 {
         self.concurrent_window.should_close()
     }
 
+    fn close(&mut self) {
+        self.concurrent_window.close()
+    }
+
     fn swap_buffers(&self) {
         self.render_window.swap_buffers()
     }
