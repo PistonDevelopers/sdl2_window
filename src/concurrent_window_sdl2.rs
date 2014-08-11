@@ -51,6 +51,10 @@ impl GameWindow for ConcurrentWindowSDL2 {
         self.should_close
     }
 
+    fn close(&mut self) {
+        self.should_close = true;
+    }
+
     fn poll_event(&mut self) -> event::Event {
         match sdl2::event::poll_event() {
             sdl2::event::QuitEvent(_) => { self.should_close = true; },
