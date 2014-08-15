@@ -27,6 +27,10 @@ git = "https://github.com/PistonDevelopers/piston"
 
 git = "https://github.com/bjz/gl-rs"
 
+[dependencies.gfx]
+
+git = "https://github.com/gfx-rs/gfx-rs"
+
 [[lib]]
 
 name = "sdl2_game_window"
