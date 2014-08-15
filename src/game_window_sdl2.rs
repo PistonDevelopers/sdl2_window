@@ -1,6 +1,8 @@
 //! A window implemented by SDL2 back-end.
 
 // External crates.
+use gfx;
+use device;
 use sdl2;
 use piston::{
     GameWindow,
@@ -34,6 +36,11 @@ impl GameWindowSDL2 {
             concurrent_window: concurrent_window,
             render_window: render_window,
         }
+    }
+
+    /// Creates a gfx devince and front end.
+    pub fn gfx(&self) -> (device::GlDevice, gfx::FrontEnd) {
+        self.concurrent_window.gfx()
     }
 }
 

@@ -6,6 +6,8 @@
 extern crate sdl2;
 extern crate piston;
 extern crate gl;
+extern crate gfx;
+extern crate device;
 
 pub use GameWindowSDL2 = game_window_sdl2::GameWindowSDL2;
 pub use ConcurrentWindowSDL2 = concurrent_window_sdl2::ConcurrentWindowSDL2;

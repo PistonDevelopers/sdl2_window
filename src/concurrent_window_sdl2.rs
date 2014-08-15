@@ -1,6 +1,9 @@
 //! RenderWindow and ConcurrentWindow implemented by SDL2 back-end.
 
 // External crates.
+use gfx;
+use gfx::DeviceHelper;
+use device;
 use std;
 use sdl2;
 use piston::{
@@ -144,5 +147,15 @@ impl ConcurrentWindowSDL2 {
             }
         );
                 
+    }
+
+    /// Creates a gfx device and front end.
+    pub fn gfx(&self) -> (device::GlDevice, gfx::FrontEnd) {
+        let mut device = device::GlDevice::new(|s| unsafe {
+            std::mem::transmute(sdl2::video::gl_get_proc_address(s))
+        });
+        let (w, h) = self.get_size();
+        let frontend = device.create_frontend(w as u16, h as u16).unwrap();
+        (device, frontend)
     }
 }
