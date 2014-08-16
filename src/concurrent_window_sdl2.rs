@@ -2,7 +2,6 @@
 
 // External crates.
 use gfx;
-use gfx::DeviceHelper;
 use device;
 use std;
 use sdl2;
@@ -150,12 +149,12 @@ impl ConcurrentWindowSDL2 {
     }
 
     /// Creates a gfx device and front end.
-    pub fn gfx(&self) -> (device::GlDevice, gfx::FrontEnd) {
-        let mut device = device::GlDevice::new(|s| unsafe {
+    pub fn gfx(&self) -> (device::GlDevice, gfx::Frame) {
+        let device = device::GlDevice::new(|s| unsafe {
             std::mem::transmute(sdl2::video::gl_get_proc_address(s))
         });
         let (w, h) = self.get_size();
-        let frontend = device.create_frontend(w as u16, h as u16).unwrap();
-        (device, frontend)
+        let frame = gfx::Frame::new(w as u16, h as u16);
+        (device, frame)
     }
 }

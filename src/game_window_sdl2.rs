@@ -39,7 +39,7 @@ impl GameWindowSDL2 {
     }
 
     /// Creates a gfx devince and front end.
-    pub fn gfx(&self) -> (device::GlDevice, gfx::FrontEnd) {
+    pub fn gfx(&self) -> (device::GlDevice, gfx::Frame) {
         self.concurrent_window.gfx()
     }
 }
