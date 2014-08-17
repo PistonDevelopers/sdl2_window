@@ -53,6 +53,11 @@ impl GameWindow for GameWindowSDL2 {
         self.concurrent_window.should_close()
     }
 
+    fn get_draw_size(&self) -> (u32, u32) {
+        let (w, h) = self.render_window.window.get_drawable_size();
+        (w as u32, h as u32)
+    }
+
     fn close(&mut self) {
         self.concurrent_window.close()
     }
