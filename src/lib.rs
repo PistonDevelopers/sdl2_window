@@ -9,9 +9,7 @@ extern crate gl;
 extern crate gfx;
 extern crate device;
 
-pub use GameWindowSDL2 = game_window_sdl2::GameWindowSDL2;
-pub use ConcurrentWindowSDL2 = concurrent_window_sdl2::ConcurrentWindowSDL2;
-pub use RenderWindowSDL2 = concurrent_window_sdl2::RenderWindowSDL2;
+pub use game_window_sdl2::GameWindowSDL2;
 
 mod game_window_sdl2;
-mod concurrent_window_sdl2;
+
