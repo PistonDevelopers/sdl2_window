@@ -33,7 +33,10 @@ impl GameWindowSDL2 {
         sdl2::init(sdl2::InitEverything);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, 3);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, 3);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextProfileMask, sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int);
+        sdl2::video::gl_set_attribute(
+            sdl2::video::GLContextProfileMask, 
+            sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int
+        );
 
         let window = sdl2::video::Window::new(
             settings.title.as_slice(),
