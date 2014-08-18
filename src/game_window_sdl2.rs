@@ -9,7 +9,7 @@ use sdl2;
 use piston::{
     GameWindow,
     GameWindowSettings,
-    event,
+    game_window,
     keyboard,
     mouse,
 };
@@ -105,7 +105,7 @@ impl GameWindow for GameWindowSDL2 {
         sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 
-    fn poll_event(&mut self) -> event::Event {
+    fn poll_event(&mut self) -> game_window::Event {
         match sdl2::event::poll_event() {
             sdl2::event::QuitEvent(_) => { self.should_close = true; },
             sdl2::event::KeyDownEvent(_, _, key, _, _) => {
@@ -121,7 +121,7 @@ impl GameWindow for GameWindowSDL2 {
                 && key == sdl2::keycode::EscapeKey {
                     self.should_close = true;
                 } else {
-                    return event::KeyPressed(sdl2_map_key(key));
+                    return game_window::KeyPressed(sdl2_map_key(key));
                 }
             },
             sdl2::event::KeyUpEvent(_, _, key, _, _) => {
@@ -131,27 +131,27 @@ impl GameWindow for GameWindowSDL2 {
                     x => x,
                 };
 
-                return event::KeyReleased(sdl2_map_key(key));
+                return game_window::KeyReleased(sdl2_map_key(key));
             },
             sdl2::event::MouseButtonDownEvent(_, _, _, button, _, _) => {
-                return event::MouseButtonPressed(sdl2_map_mouse(button));
+                return game_window::MouseButtonPressed(sdl2_map_mouse(button));
             },
             sdl2::event::MouseButtonUpEvent(_, _, _, button, _, _) => {
-                return event::MouseButtonReleased(sdl2_map_mouse(button));
+                return game_window::MouseButtonReleased(sdl2_map_mouse(button));
             },
             sdl2::event::MouseMotionEvent(_, _, _, _, x, y, dx, dy) => {
-                return event::MouseMoved(
+                return game_window::MouseMoved(
                     x as f64,
                     y as f64,
                     Some((dx as f64, dy as f64))
                 );
             },
             sdl2::event::MouseWheelEvent(_, _, _, x, y) => {
-                return event::MouseScrolled(x as f64, y as f64);
+                return game_window::MouseScrolled(x as f64, y as f64);
             },
             _ => {},
         }
-        event::NoEvent
+        game_window::NoEvent
     }
 }
 
