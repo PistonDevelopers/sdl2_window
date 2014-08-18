@@ -46,7 +46,7 @@ impl GameWindowSDL2 {
             sdl2::video::PosCentered,
             settings.size[0] as int,
             settings.size[1] as int,
-            sdl2::video::OpenGL
+            sdl2::video::OpenGL | sdl2::video::Resizable
         ).unwrap();
         if settings.fullscreen {
             window.set_fullscreen(sdl2::video::FTTrue);
