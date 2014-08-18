@@ -35,7 +35,7 @@ git = "https://github.com/bjz/gl-rs"
 
 git = "https://github.com/gfx-rs/gfx-rs"
 
-[[lib]]
+[lib]
 
 name = "sdl2_game_window"
 path = "src/lib.rs"
