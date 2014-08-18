@@ -5,6 +5,7 @@
 
 extern crate sdl2;
 extern crate piston;
+extern crate shader_version;
 extern crate gl;
 extern crate gfx;
 extern crate device;

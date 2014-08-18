@@ -13,6 +13,7 @@ use piston::{
     keyboard,
     mouse,
 };
+use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
 pub struct GameWindowSDL2 {
@@ -29,10 +30,11 @@ pub struct GameWindowSDL2 {
 
 impl GameWindowSDL2 {
     /// Creates a new game window for SDL2.
-    pub fn new(settings: GameWindowSettings) -> GameWindowSDL2 {
+    pub fn new(opengl: &OpenGL, settings: GameWindowSettings) -> GameWindowSDL2 {
         sdl2::init(sdl2::InitEverything);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, 3);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, 3);
+        let (major, minor) = opengl.get_major_minor();
+        sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
+        sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, minor);
         sdl2::video::gl_set_attribute(
             sdl2::video::GLContextProfileMask, 
             sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int
