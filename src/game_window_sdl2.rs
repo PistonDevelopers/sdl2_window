@@ -30,7 +30,7 @@ pub struct GameWindowSDL2 {
 
 impl GameWindowSDL2 {
     /// Creates a new game window for SDL2.
-    pub fn new(opengl: &OpenGL, settings: GameWindowSettings) -> GameWindowSDL2 {
+    pub fn new(opengl: OpenGL, settings: GameWindowSettings) -> GameWindowSDL2 {
         sdl2::init(sdl2::InitEverything);
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
