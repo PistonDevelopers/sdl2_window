@@ -10,9 +10,9 @@ use piston::{
     GameWindow,
     GameWindowSettings,
     game_window,
-    keyboard,
-    mouse,
 };
+use piston::input::keyboard;
+use piston::input::mouse;
 use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
