@@ -79,6 +79,12 @@ impl GameWindowSDL2 {
     }
 }
 
+impl Drop for GameWindowSDL2 {
+    fn drop(&mut self) {
+        self.capture_cursor(false);
+    }
+}
+
 impl GameWindow for GameWindowSDL2 {
     fn get_settings<'a>(&'a self) -> &'a GameWindowSettings {
         &self.settings
