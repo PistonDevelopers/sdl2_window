@@ -5,6 +5,11 @@ os:
 env:
     global:
         - LD_LIBRARY_PATH: /usr/local/lib
+before_install:
+    - curl -O http://www.libsdl.org/release/SDL2-2.0.0.tar.gz
+    - tar -xzvf SDL2-2.0.0.tar.gz
+install:
+    - (cd SDL2-2.0.0 && ./configure && make && sudo make install)
 before_script:
     - rustc -v
     - cargo -V
