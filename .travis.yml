@@ -4,6 +4,7 @@ os:
     - osx
 env:
     global:
+        - secure: cMj2eu4gnI5+kWD9rBNL51IARXpy6D/imoqVaYcqFuGUGGCY66qdwq/ZfBh+GRJAVEMkvRn7QWwf6KQOjAun6aVs4d85c3/QNMqe+XTi9tcG11lQW3nUCibTavv+gM9EX7vJKCfOvZaqFPmUW4ez8ttppXcvdcHEBMTkWUxTWZM=
         - LD_LIBRARY_PATH: /usr/local/lib
 before_install:
     - curl -O http://www.libsdl.org/release/SDL2-2.0.0.tar.gz
@@ -16,3 +17,6 @@ before_script:
 script:
     - cargo build -v
     - cargo test -v
+    - cargo doc -v
+after_success:
+    - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
