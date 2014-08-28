@@ -9,8 +9,8 @@ use sdl2;
 use piston::{
     GameWindow,
     GameWindowSettings,
-    game_window,
 };
+use piston::input;
 use piston::input::keyboard;
 use piston::input::mouse;
 use shader_version::opengl::OpenGL;
@@ -26,6 +26,7 @@ pub struct GameWindowSDL2 {
     settings: GameWindowSettings,
     should_close: bool,
     last_pressed_key: Option<sdl2::keycode::KeyCode>,
+    mouse_relative: Option<(f64, f64)>,
 }
 
 impl GameWindowSDL2 {
@@ -52,6 +53,9 @@ impl GameWindowSDL2 {
             window.set_fullscreen(sdl2::video::FTTrue);
         }
 
+        // Send text input events.
+        sdl2::keyboard::start_text_input();
+
         let context = window.gl_create_context().unwrap();
 
         // Load the OpenGL function pointers
@@ -65,6 +69,7 @@ impl GameWindowSDL2 {
             last_pressed_key: None,
             window: window,
             context: context,
+            mouse_relative: None,
         }
     }
 
@@ -111,15 +116,23 @@ impl GameWindow for GameWindowSDL2 {
         sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 
-    fn poll_event(&mut self) -> game_window::Event {
+    fn poll_event(&mut self) -> Option<input::InputEvent> {
+        match self.mouse_relative {
+            Some((x, y)) => {
+                self.mouse_relative = None;
+                return Some(input::Move(input::MouseRelative(x, y)));
+            }
+            None => {}
+        }
         match sdl2::event::poll_event() {
-            sdl2::event::QuitEvent(_) => { self.should_close = true; },
+            sdl2::event::QuitEvent(_) => { self.should_close = true; }
+            sdl2::event::TextInputEvent(_, _, text) => { return Some(input::Text(text)); }
             sdl2::event::KeyDownEvent(_, _, key, _, _) => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 match self.last_pressed_key {
                     Some(x) if x == key => return self.poll_event(),
-                    _ => {},
+                    _ => {}
                 };
                 self.last_pressed_key = Some(key);
 
@@ -127,9 +140,9 @@ impl GameWindow for GameWindowSDL2 {
                 && key == sdl2::keycode::EscapeKey {
                     self.should_close = true;
                 } else {
-                    return game_window::KeyPressed(sdl2_map_key(key));
+                    return Some(input::Press(input::Keyboard(sdl2_map_key(key))));
                 }
-            },
+            }
             sdl2::event::KeyUpEvent(_, _, key, _, _) => {
                 // Reset the last pressed key.
                 self.last_pressed_key = match self.last_pressed_key {
@@ -137,27 +150,25 @@ impl GameWindow for GameWindowSDL2 {
                     x => x,
                 };
 
-                return game_window::KeyReleased(sdl2_map_key(key));
-            },
+                return Some(input::Release(input::Keyboard(sdl2_map_key(key))));
+            }
             sdl2::event::MouseButtonDownEvent(_, _, _, button, _, _) => {
-                return game_window::MouseButtonPressed(sdl2_map_mouse(button));
-            },
+                return Some(input::Press(input::Mouse(sdl2_map_mouse(button))));
+            }
             sdl2::event::MouseButtonUpEvent(_, _, _, button, _, _) => {
-                return game_window::MouseButtonReleased(sdl2_map_mouse(button));
-            },
+                return Some(input::Release(input::Mouse(sdl2_map_mouse(button))));
+            }
             sdl2::event::MouseMotionEvent(_, _, _, _, x, y, dx, dy) => {
-                return game_window::MouseMoved(
-                    x as f64,
-                    y as f64,
-                    Some((dx as f64, dy as f64))
-                );
+                // Send relative move movement next time.
+                self.mouse_relative = Some((dx as f64, dy as f64));
+                return Some(input::Move(input::MouseCursor(x as f64, y as f64)));
             },
             sdl2::event::MouseWheelEvent(_, _, _, x, y) => {
-                return game_window::MouseScrolled(x as f64, y as f64);
-            },
-            _ => {},
+                return Some(input::Move(input::MouseScroll(x as f64, y as f64)));
+            }
+            _ => {}
         }
-        game_window::NoEvent
+        None
     }
 }
 
