@@ -4,7 +4,6 @@
 use std::mem::transmute;
 use gl;
 use gfx;
-use device;
 use sdl2;
 use piston::{
     GameWindow,
@@ -74,8 +73,8 @@ impl GameWindowSDL2 {
     }
 
     /// Creates a gfx devince and front end.
-    pub fn gfx(&self) -> (device::GlDevice, gfx::Frame) {
-        let device = device::GlDevice::new(|s| unsafe {
+    pub fn gfx(&self) -> (gfx::GlDevice, gfx::Frame) {
+        let device = gfx::GlDevice::new(|s| unsafe {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
         let (w, h) = self.get_size();
