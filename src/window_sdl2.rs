@@ -6,8 +6,8 @@ use gl;
 use gfx;
 use sdl2;
 use piston::{
-    GameWindow,
-    GameWindowSettings,
+    Window,
+    WindowSettings,
 };
 use piston::input;
 use piston::input::keyboard;
@@ -15,22 +15,22 @@ use piston::input::mouse;
 use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
-pub struct GameWindowSDL2 {
+pub struct WindowSDL2 {
     /// SDL window handle
     pub window: sdl2::video::Window,
     /// Allow dead code because this keeps track of the OpenGL context.
     /// Will be released on drop.
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
-    settings: GameWindowSettings,
+    settings: WindowSettings,
     should_close: bool,
     last_pressed_key: Option<sdl2::keycode::KeyCode>,
     mouse_relative: Option<(f64, f64)>,
 }
 
-impl GameWindowSDL2 {
+impl WindowSDL2 {
     /// Creates a new game window for SDL2.
-    pub fn new(opengl: OpenGL, settings: GameWindowSettings) -> GameWindowSDL2 {
+    pub fn new(opengl: OpenGL, settings: WindowSettings) -> WindowSDL2 {
         sdl2::init(sdl2::InitEverything);
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
@@ -69,7 +69,7 @@ impl GameWindowSDL2 {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
 
-        GameWindowSDL2 {
+        WindowSDL2 {
             settings: settings,
             should_close: false,
             last_pressed_key: None,
@@ -90,14 +90,14 @@ impl GameWindowSDL2 {
     }
 }
 
-impl Drop for GameWindowSDL2 {
+impl Drop for WindowSDL2 {
     fn drop(&mut self) {
         self.capture_cursor(false);
     }
 }
 
-impl GameWindow for GameWindowSDL2 {
-    fn get_settings<'a>(&'a self) -> &'a GameWindowSettings {
+impl Window for WindowSDL2 {
+    fn get_settings<'a>(&'a self) -> &'a WindowSettings {
         &self.settings
     }
 
