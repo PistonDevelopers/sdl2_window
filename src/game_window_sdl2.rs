@@ -36,9 +36,16 @@ impl GameWindowSDL2 {
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, minor);
         sdl2::video::gl_set_attribute(
-            sdl2::video::GLContextProfileMask, 
+            sdl2::video::GLContextProfileMask,
             sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int
         );
+        if settings.samples != 0 {
+            sdl2::video::gl_set_attribute(sdl2::video::GLMultiSampleBuffers, 1);
+            sdl2::video::gl_set_attribute(
+                sdl2::video::GLMultiSampleSamples,
+                settings.samples as int
+            );
+        }
 
         let window = sdl2::video::Window::new(
             settings.title.as_slice(),
@@ -186,4 +193,3 @@ pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> mouse::Button {
         sdl2::mouse::UnknownMouse(_) => mouse::Unknown,
     }
 }
-
