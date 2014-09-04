@@ -10,7 +10,7 @@ extern crate gl;
 extern crate gfx;
 extern crate device;
 
-pub use game_window_sdl2::GameWindowSDL2;
+pub use window_sdl2::WindowSDL2;
 
-mod game_window_sdl2;
+mod window_sdl2;
 
