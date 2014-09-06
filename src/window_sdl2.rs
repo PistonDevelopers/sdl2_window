@@ -172,6 +172,9 @@ impl Window for WindowSDL2 {
             sdl2::event::MouseWheelEvent(_, _, _, x, y) => {
                 return Some(input::Move(input::MouseScroll(x as f64, y as f64)));
             }
+            sdl2::event::WindowEvent(_, _, sdl2::event::ResizedWindowEventId, w, h) => {
+                return Some(input::Resize(w as u32, h as u32));
+            }
             _ => {}
         }
         None
