@@ -175,6 +175,12 @@ impl Window for WindowSDL2 {
             sdl2::event::WindowEvent(_, _, sdl2::event::ResizedWindowEventId, w, h) => {
                 return Some(input::Resize(w as u32, h as u32));
             }
+            sdl2::event::WindowEvent(_, _, sdl2::event::FocusGainedWindowEventId, _, _) => {
+                return Some(input::Focus(true));
+            }
+            sdl2::event::WindowEvent(_, _, sdl2::event::FocusLostWindowEventId, _, _) => {
+                return Some(input::Focus(false));
+            }
             _ => {}
         }
         None
