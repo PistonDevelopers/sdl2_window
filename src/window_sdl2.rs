@@ -5,13 +5,13 @@ use std::mem::transmute;
 use gl;
 use gfx;
 use sdl2;
-use piston::{
+use event::{
     Window,
     WindowSettings,
 };
-use piston::input;
-use piston::input::keyboard;
-use piston::input::mouse;
+use input;
+use input::keyboard;
+use input::mouse;
 use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.

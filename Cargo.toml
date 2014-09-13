@@ -19,9 +19,17 @@ tags = []
 
 git = "https://github.com/AngryLawyer/rust-sdl2"
 
-[dependencies.piston]
+[dependencies.event]
 
-git = "https://github.com/PistonDevelopers/piston"
+git = "https://github.com/PistonDevelopers/rust-event"
+
+[dependencies.shader_version]
+
+git = "https://github.com/PistonDevelopers/shader_version"
+
+[dependencies.input]
+
+git = "https://github.com/PistonDevelopers/input"
 
 [dependencies.gl]
 
