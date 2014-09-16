@@ -8,8 +8,6 @@ extern crate event;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
-extern crate gfx;
-extern crate device;
 
 pub use window_sdl2::WindowSDL2;
 

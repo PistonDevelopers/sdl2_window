@@ -3,7 +3,6 @@
 // External crates.
 use std::mem::transmute;
 use gl;
-use gfx;
 use sdl2;
 use event::{
     Window,
@@ -77,16 +76,6 @@ impl WindowSDL2 {
             context: context,
             mouse_relative: None,
         }
-    }
-
-    /// Creates a gfx devince and front end.
-    pub fn gfx(&self) -> (gfx::GlDevice, gfx::Frame) {
-        let device = gfx::GlDevice::new(|s| unsafe {
-            transmute(sdl2::video::gl_get_proc_address(s))
-        });
-        let (w, h) = self.get_size();
-        let frame = gfx::Frame::new(w as u16, h as u16);
-        (device, frame)
     }
 }
 
