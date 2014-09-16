@@ -35,10 +35,6 @@ git = "https://github.com/PistonDevelopers/input"
 
 git = "https://github.com/bjz/gl-rs"
 
-[dependencies.gfx]
-
-git = "https://github.com/gfx-rs/gfx-rs"
-
 [lib]
 
 name = "sdl2_game_window"
