@@ -21,15 +21,15 @@ git = "https://github.com/AngryLawyer/rust-sdl2"
 
 [dependencies.event]
 
-git = "https://github.com/PistonDevelopers/rust-event"
+git = "https://github.com/pistondevelopers/event"
 
 [dependencies.shader_version]
 
-git = "https://github.com/PistonDevelopers/shader_version"
+git = "https://github.com/pistondevelopers/shader_version"
 
 [dependencies.input]
 
-git = "https://github.com/PistonDevelopers/input"
+git = "https://github.com/pistondevelopers/input"
 
 [dependencies.gl]
 
