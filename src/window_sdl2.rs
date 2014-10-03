@@ -183,7 +183,7 @@ impl Window for WindowSDL2 {
 
 pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
     use std::num::FromPrimitive;
-    FromPrimitive::from_u64(keycode.code() as u64).unwrap()
+    FromPrimitive::from_u64(keycode as u64).unwrap()
 }
 
 pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> mouse::Button {
