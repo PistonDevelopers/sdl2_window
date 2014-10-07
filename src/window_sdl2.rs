@@ -30,7 +30,7 @@ pub struct WindowSDL2 {
 impl WindowSDL2 {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> WindowSDL2 {
-        sdl2::init(sdl2::InitEverything);
+        sdl2::init(sdl2::INIT_EVERYTHING);
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, minor);
@@ -52,7 +52,7 @@ impl WindowSDL2 {
             sdl2::video::PosCentered,
             settings.size[0] as int,
             settings.size[1] as int,
-            sdl2::video::OpenGL | sdl2::video::Resizable
+            sdl2::video::OPENGL | sdl2::video::RESIZABLE
         ).unwrap();
         if settings.fullscreen {
             window.set_fullscreen(sdl2::video::FTTrue);
