@@ -30,3 +30,7 @@ let mut device = gfx::GlDevice::new(|s| unsafe {
 let (w, h) = window.get_size();
 let frame = gfx::Frame::new(w as u16, h as u16);
 ```
+
+### Troubleshooting
+
+* [I get `ld: library not found for -lSDL2` error on OSX](https://github.com/PistonDevelopers/rust-empty/issues/175)
