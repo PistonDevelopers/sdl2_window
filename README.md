@@ -34,3 +34,8 @@ let frame = gfx::Frame::new(w as u16, h as u16);
 ### Troubleshooting
 
 * [I get `ld: library not found for -lSDL2` error on OSX](https://github.com/PistonDevelopers/rust-empty/issues/175)
+
+## Dependencies
+
+![dependencies](./Cargo.png)
+

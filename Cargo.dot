@@ -1,0 +1,20 @@
+digraph example3 {
+    N0[label="sdl2_window"];
+    N1[label="shader_version"];
+    N2[label="sdl2"];
+    N3[label="input"];
+    N4[label="event"];
+    N5[label="gl"];
+    N6[label="gl_generator"];
+    N7[label="khronos_api"];
+    N8[label="rust-xml"];
+    N0 -> N1[label=""];
+    N0 -> N2[label=""];
+    N0 -> N3[label=""];
+    N0 -> N4[label=""];
+    N0 -> N5[label=""];
+    N6 -> N7[label=""];
+    N6 -> N8[label=""];
+    N4 -> N3[label=""];
+    N5 -> N6[label=""];
+}
