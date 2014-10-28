@@ -7,9 +7,9 @@ Maintainers: @TyOverby, @bvssvni, @Coeuvre
 ### How to create a window
 
 ```Rust
-let mut window = WindowSDL2::new(
-    piston::shader_version::opengl::OpenGL_3_2,
-    piston::WindowSettings {
+let mut window = Sdl2Window::new(
+    shader_version::opengl::OpenGL_3_2,
+    WindowSettings {
         title: "My application".to_string(),
         size: [640, 480],
         fullscreen: false,
