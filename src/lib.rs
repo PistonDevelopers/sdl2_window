@@ -19,7 +19,7 @@ use input::mouse;
 use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
-pub struct SDL2Window {
+pub struct Sdl2Window {
     /// SDL window handle
     pub window: sdl2::video::Window,
     /// Allow dead code because this keeps track of the OpenGL context.
@@ -32,9 +32,9 @@ pub struct SDL2Window {
     mouse_relative: Option<(f64, f64)>,
 }
 
-impl SDL2Window {
+impl Sdl2Window {
     /// Creates a new game window for SDL2.
-    pub fn new(opengl: OpenGL, settings: WindowSettings) -> SDL2Window {
+    pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
         sdl2::init(sdl2::INIT_EVERYTHING);
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
@@ -73,7 +73,7 @@ impl SDL2Window {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
 
-        SDL2Window {
+        Sdl2Window {
             settings: settings,
             should_close: false,
             last_pressed_key: None,
@@ -84,13 +84,13 @@ impl SDL2Window {
     }
 }
 
-impl Drop for SDL2Window {
+impl Drop for Sdl2Window {
     fn drop(&mut self) {
         self.capture_cursor(false);
     }
 }
 
-impl Window for SDL2Window {
+impl Window for Sdl2Window {
     fn get_settings<'a>(&'a self) -> &'a WindowSettings {
         &self.settings
     }
