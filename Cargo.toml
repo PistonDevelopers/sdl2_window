@@ -1,6 +1,6 @@
 [package]
 
-name = "sdl2_game_window"
+name = "sdl2_window"
 version = "0.0.0"
 authors = [
     "bvssvni <bvssvni@gmail.com>",
@@ -37,5 +37,5 @@ git = "https://github.com/bjz/gl-rs"
 
 [lib]
 
-name = "sdl2_game_window"
+name = "sdl2_window"
 path = "src/lib.rs"
