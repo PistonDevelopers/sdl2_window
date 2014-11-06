@@ -14,8 +14,8 @@ use event::{
     Window,
     WindowSettings,
 };
-use input::keyboard;
-use input::mouse;
+use event::window::{ PollEvent, SwapBuffers };
+use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
@@ -90,38 +90,14 @@ impl Drop for Sdl2Window {
     }
 }
 
-impl Window for Sdl2Window {
-    fn get_settings<'a>(&'a self) -> &'a WindowSettings {
-        &self.settings
-    }
-
-    fn should_close(&self) -> bool {
-        self.should_close
-    }
-
-    fn get_draw_size(&self) -> (u32, u32) {
-        let (w, h) = self.window.get_drawable_size();
-        (w as u32, h as u32)
-    }
-
-    fn get_size(&self) -> (u32, u32) {
-        let (w, h) = self.window.get_size();
-        (w as u32, h as u32)
-    }
-
-    fn close(&mut self) {
-        self.should_close = true;
-    }
-
-    fn swap_buffers(&self) {
+impl SwapBuffers for Sdl2Window {
+    fn swap_buffers(&mut self) {
         self.window.gl_swap_window();
     }
+}
 
-    fn capture_cursor(&mut self, enabled: bool) {
-        sdl2::mouse::set_relative_mouse_mode(enabled)
-    }
-
-    fn poll_event(&mut self) -> Option<input::InputEvent> {
+impl PollEvent<InputEvent> for Sdl2Window {
+    fn poll_event(&mut self) -> Option<InputEvent> {
         match self.mouse_relative {
             Some((x, y)) => {
                 self.mouse_relative = None;
@@ -183,6 +159,34 @@ impl Window for Sdl2Window {
             _ => {}
         }
         None
+    }
+}
+
+impl Window for Sdl2Window {
+    fn get_settings<'a>(&'a self) -> &'a WindowSettings {
+        &self.settings
+    }
+
+    fn should_close(&self) -> bool {
+        self.should_close
+    }
+
+    fn get_draw_size(&self) -> (u32, u32) {
+        let (w, h) = self.window.get_drawable_size();
+        (w as u32, h as u32)
+    }
+
+    fn get_size(&self) -> (u32, u32) {
+        let (w, h) = self.window.get_size();
+        (w as u32, h as u32)
+    }
+
+    fn close(&mut self) {
+        self.should_close = true;
+    }
+
+    fn capture_cursor(&mut self, enabled: bool) {
+        sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 }
 
