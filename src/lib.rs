@@ -7,6 +7,7 @@ extern crate event;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
+extern crate current;
 
 // External crates.
 use std::mem::transmute;
@@ -14,9 +15,11 @@ use event::{
     Window,
     WindowSettings,
 };
+use event::window::{ ShouldClose, Size };
 use event::window::{ PollEvent, SwapBuffers };
 use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
+use current::{ Get };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -87,6 +90,19 @@ impl Sdl2Window {
 impl Drop for Sdl2Window {
     fn drop(&mut self) {
         self.capture_cursor(false);
+    }
+}
+
+impl Get<ShouldClose> for Sdl2Window {
+    fn get(&self) -> ShouldClose {
+        ShouldClose(self.should_close)
+    }
+}
+
+impl Get<Size> for Sdl2Window {
+    fn get(&self) -> Size {
+        let (w, h) = self.window.get_size();
+        Size([w as u32, h as u32])
     }
 }
 
@@ -167,17 +183,8 @@ impl Window for Sdl2Window {
         &self.settings
     }
 
-    fn should_close(&self) -> bool {
-        self.should_close
-    }
-
     fn get_draw_size(&self) -> (u32, u32) {
         let (w, h) = self.window.get_drawable_size();
-        (w as u32, h as u32)
-    }
-
-    fn get_size(&self) -> (u32, u32) {
-        let (w, h) = self.window.get_size();
         (w as u32, h as u32)
     }
 
