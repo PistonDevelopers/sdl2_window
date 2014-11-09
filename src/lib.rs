@@ -32,10 +32,10 @@ pub struct Sdl2Window {
     /// Will be released on drop.
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
-    settings: WindowSettings,
     should_close: bool,
     last_pressed_key: Option<sdl2::keycode::KeyCode>,
     mouse_relative: Option<(f64, f64)>,
+    exit_on_esc: bool,
 }
 
 impl Sdl2Window {
@@ -80,7 +80,7 @@ impl Sdl2Window {
         });
 
         Sdl2Window {
-            settings: settings,
+            exit_on_esc: settings.exit_on_esc,
             should_close: false,
             last_pressed_key: None,
             window: window,
@@ -136,7 +136,7 @@ impl PollEvent<InputEvent> for Sdl2Window {
                 };
                 self.last_pressed_key = Some(key);
 
-                if self.settings.exit_on_esc
+                if self.exit_on_esc
                 && key == sdl2::keycode::EscapeKey {
                     self.should_close = true;
                 } else {
@@ -233,11 +233,7 @@ impl SetTitle for Sdl2Window {
     }
 }
 
-impl Window for Sdl2Window {
-    fn get_settings<'a>(&'a self) -> &'a WindowSettings {
-        &self.settings
-    }
-}
+impl Window for Sdl2Window {}
 
 /// Maps a SDL2 key to piston-input key.
 pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
