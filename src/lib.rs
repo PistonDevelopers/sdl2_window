@@ -17,9 +17,10 @@ use event::{
 };
 use event::window::{ ShouldClose, Size };
 use event::window::{ PollEvent, SwapBuffers };
+use event::window::{ CaptureCursor, SetCaptureCursor };
 use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
-use current::{ Get };
+use current::{ Get, Modifier, Set };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -89,7 +90,7 @@ impl Sdl2Window {
 
 impl Drop for Sdl2Window {
     fn drop(&mut self) {
-        self.capture_cursor(false);
+        self.set_mut(CaptureCursor(false));
     }
 }
 
@@ -178,6 +179,19 @@ impl PollEvent<InputEvent> for Sdl2Window {
     }
 }
 
+impl Modifier<Sdl2Window> for CaptureCursor {
+    fn modify(self, _window: &mut Sdl2Window) {
+        let CaptureCursor(enabled) = self;
+        sdl2::mouse::set_relative_mouse_mode(enabled)
+    }
+}
+
+impl SetCaptureCursor for Sdl2Window {
+    fn set_capture_cursor(&mut self, val: CaptureCursor) {
+        self.set_mut(val);
+    }
+}
+
 impl Window for Sdl2Window {
     fn get_settings<'a>(&'a self) -> &'a WindowSettings {
         &self.settings
@@ -190,10 +204,6 @@ impl Window for Sdl2Window {
 
     fn close(&mut self) {
         self.should_close = true;
-    }
-
-    fn capture_cursor(&mut self, enabled: bool) {
-        sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 }
 
