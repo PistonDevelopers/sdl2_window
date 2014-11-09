@@ -18,6 +18,7 @@ use event::{
 use event::window::{ ShouldClose, SetShouldClose, Size };
 use event::window::{ PollEvent, SwapBuffers };
 use event::window::{ CaptureCursor, SetCaptureCursor };
+use event::window::{ DrawSize };
 use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
 use current::{ Get, Modifier, Set };
@@ -205,15 +206,18 @@ impl SetShouldClose for Sdl2Window {
     }
 }
 
+impl Get<DrawSize> for Sdl2Window {
+    fn get(&self) -> DrawSize {
+        let (w, h) = self.window.get_drawable_size();
+        DrawSize([w as u32, h as u32])
+    }
+}
+
 impl Window for Sdl2Window {
     fn get_settings<'a>(&'a self) -> &'a WindowSettings {
         &self.settings
     }
 
-    fn get_draw_size(&self) -> (u32, u32) {
-        let (w, h) = self.window.get_drawable_size();
-        (w as u32, h as u32)
-    }
 }
 
 /// Maps a SDL2 key to piston-input key.
