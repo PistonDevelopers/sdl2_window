@@ -15,7 +15,7 @@ use event::{
     Window,
     WindowSettings,
 };
-use event::window::{ ShouldClose, Size };
+use event::window::{ ShouldClose, SetShouldClose, Size };
 use event::window::{ PollEvent, SwapBuffers };
 use event::window::{ CaptureCursor, SetCaptureCursor };
 use input::{ keyboard, mouse, InputEvent };
@@ -192,6 +192,19 @@ impl SetCaptureCursor for Sdl2Window {
     }
 }
 
+impl Modifier<Sdl2Window> for ShouldClose {
+    fn modify(self, window: &mut Sdl2Window) {
+        let ShouldClose(val) = self;
+        window.should_close = val;
+    }
+}
+
+impl SetShouldClose for Sdl2Window {
+    fn set_should_close(&mut self, val: ShouldClose) {
+        self.set_mut(val);
+    }
+}
+
 impl Window for Sdl2Window {
     fn get_settings<'a>(&'a self) -> &'a WindowSettings {
         &self.settings
@@ -200,10 +213,6 @@ impl Window for Sdl2Window {
     fn get_draw_size(&self) -> (u32, u32) {
         let (w, h) = self.window.get_drawable_size();
         (w as u32, h as u32)
-    }
-
-    fn close(&mut self) {
-        self.should_close = true;
     }
 }
 
