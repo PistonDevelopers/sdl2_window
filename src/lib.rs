@@ -16,12 +16,8 @@ use event::{
     WindowSettings,
 };
 use event::window::{ 
-    ShouldClose, SetShouldClose, Size,
-    PollEvent, SwapBuffers,
-    CaptureCursor, SetCaptureCursor,
-    DrawSize,
-    Title, SetTitle,
-    ExitOnEsc, SetExitOnEsc,
+    ShouldClose, Size, PollEvent, SwapBuffers,
+    CaptureCursor, DrawSize, Title, ExitOnEsc
 }; 
 use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
@@ -191,22 +187,10 @@ impl Modifier<Sdl2Window> for CaptureCursor {
     }
 }
 
-impl SetCaptureCursor for Sdl2Window {
-    fn set_capture_cursor(&mut self, val: CaptureCursor) {
-        self.set_mut(val);
-    }
-}
-
 impl Modifier<Sdl2Window> for ShouldClose {
     fn modify(self, window: &mut Sdl2Window) {
         let ShouldClose(val) = self;
         window.should_close = val;
-    }
-}
-
-impl SetShouldClose for Sdl2Window {
-    fn set_should_close(&mut self, val: ShouldClose) {
-        self.set_mut(val);
     }
 }
 
@@ -230,12 +214,6 @@ impl Modifier<Sdl2Window> for Title {
     }
 }
 
-impl SetTitle for Sdl2Window {
-    fn set_title(&mut self, val: Title) {
-        self.set_mut(val);
-    }
-}
-
 impl Get<ExitOnEsc> for Sdl2Window {
     fn get(&self) -> ExitOnEsc {
         ExitOnEsc(self.exit_on_esc)
@@ -246,12 +224,6 @@ impl Modifier<Sdl2Window> for ExitOnEsc {
     fn modify(self, window: &mut Sdl2Window) {
         let ExitOnEsc(val) = self;
         window.exit_on_esc = val;
-    }
-}
-
-impl SetExitOnEsc for Sdl2Window {
-    fn set_exit_on_esc(&mut self, val: ExitOnEsc) {
-        self.set_mut(val);
     }
 }
 
