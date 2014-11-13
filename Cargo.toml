@@ -19,9 +19,9 @@ tags = []
 
 git = "https://github.com/AngryLawyer/rust-sdl2"
 
-[dependencies.event]
+[dependencies.window]
 
-git = "https://github.com/pistondevelopers/event"
+git = "https://github.com/pistondevelopers/window"
 
 [dependencies.shader_version]
 
