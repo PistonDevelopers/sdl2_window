@@ -3,7 +3,7 @@
 //! A SDL2 window back-end for the Piston game engine.
 
 extern crate sdl2;
-extern crate event;
+extern crate window;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
@@ -11,14 +11,12 @@ extern crate current;
 
 // External crates.
 use std::mem::transmute;
-use event::{
+use window::{
     Window,
     WindowSettings,
-};
-use event::window::{ 
     ShouldClose, Size, PollEvent, SwapBuffers,
     CaptureCursor, DrawSize, Title, ExitOnEsc
-}; 
+};
 use input::{ keyboard, mouse, InputEvent };
 use shader_version::opengl::OpenGL;
 use current::{ Get, Modifier, Set };
