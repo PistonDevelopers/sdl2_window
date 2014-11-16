@@ -35,6 +35,13 @@ pub struct Sdl2Window {
     exit_on_esc: bool,
 }
 
+#[test]
+fn test_sdl2_window() {
+    fn foo<T: Window>() {}
+
+    foo::<Sdl2Window>();
+}
+
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
@@ -224,8 +231,6 @@ impl Modifier<Sdl2Window> for ExitOnEsc {
         window.exit_on_esc = val;
     }
 }
-
-impl Window for Sdl2Window {}
 
 /// Maps a SDL2 key to piston-input key.
 pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
