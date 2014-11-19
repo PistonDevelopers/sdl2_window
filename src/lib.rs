@@ -129,7 +129,7 @@ impl PollEvent<InputEvent> for Sdl2Window {
             None => {}
         }
         match sdl2::event::poll_event() {
-            sdl2::event::Event::Quit_) => { self.should_close = true; }
+            sdl2::event::Event::Quit(_) => { self.should_close = true; }
             sdl2::event::Event::TextInput(_, _, text) => { return Some(input::Text(text)); }
             sdl2::event::Event::KeyDown(_, _, key, _, _) => {
                 // SDL2 repeats the key down event.
