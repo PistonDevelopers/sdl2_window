@@ -176,7 +176,7 @@ impl PollEvent<InputEvent> for Sdl2Window {
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusGained, _, _) => {
                 return Some(input::Focus(true));
             }
-            sdl2::event::Event::Window(_, _, sdl2::event::Event::WindowEventId::FocusLost, _, _) => {
+            sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusLost, _, _) => {
                 return Some(input::Focus(false));
             }
             _ => {}
@@ -241,11 +241,11 @@ pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
 /// Maps a SDL2 mouse button to piston-input button.
 pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> mouse::Button {
     match button {
-        sdl2::mouse::Mouse::LeftMouse => mouse::Left,
-        sdl2::mouse::Mouse::RightMouse => mouse::Right,
-        sdl2::mouse::Mouse::MiddleMouse => mouse::Middle,
-        sdl2::mouse::Mouse::X1Mouse => mouse::X1,
-        sdl2::mouse::Mouse::X2Mouse => mouse::X2,
-        sdl2::mouse::Mouse::UnknownMouse(_) => mouse::Unknown,
+        sdl2::mouse::Mouse::Left => mouse::Button::Left,
+        sdl2::mouse::Mouse::Right => mouse::Button::Right,
+        sdl2::mouse::Mouse::Middle => mouse::Button::Middle,
+        sdl2::mouse::Mouse::X1 => mouse::Button::X1,
+        sdl2::mouse::Mouse::X2 => mouse::Button::X2,
+        sdl2::mouse::Mouse::Unknown(_) => mouse::Button::Unknown,
     }
 }
