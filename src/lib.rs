@@ -30,7 +30,6 @@ pub struct Sdl2Window {
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
     should_close: bool,
-    last_pressed_key: Option<sdl2::keycode::KeyCode>,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
 }
@@ -86,7 +85,6 @@ impl Sdl2Window {
         Sdl2Window {
             exit_on_esc: settings.exit_on_esc,
             should_close: false,
-            last_pressed_key: None,
             window: window,
             context: context,
             mouse_relative: None,
@@ -131,14 +129,12 @@ impl PollEvent<InputEvent> for Sdl2Window {
         match sdl2::event::poll_event() {
             sdl2::event::Event::Quit(_) => { self.should_close = true; }
             sdl2::event::Event::TextInput(_, _, text) => { return Some(input::Text(text)); }
-            sdl2::event::Event::KeyDown(_, _, key, _, _) => {
+            sdl2::event::Event::KeyDown(_, _, key, _, _, repeat) => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
-                match self.last_pressed_key {
-                    Some(x) if x == key => return self.poll_event(),
-                    _ => {}
-                };
-                self.last_pressed_key = Some(key);
+                if repeat {
+                    return self.poll_event()
+                }
 
                 if self.exit_on_esc
                 && key == sdl2::keycode::KeyCode::Escape {
@@ -147,13 +143,10 @@ impl PollEvent<InputEvent> for Sdl2Window {
                     return Some(input::Press(input::Keyboard(sdl2_map_key(key))));
                 }
             }
-            sdl2::event::Event::KeyUp(_, _, key, _, _) => {
-                // Reset the last pressed key.
-                self.last_pressed_key = match self.last_pressed_key {
-                    Some(x) if x == key => None,
-                    x => x,
-                };
-
+            sdl2::event::Event::KeyUp(_, _, key, _, _, repeat) => {
+                if repeat {
+                    return self.poll_event()
+                }
                 return Some(input::Release(input::Keyboard(sdl2_map_key(key))));
             }
             sdl2::event::Event::MouseButtonDown(_, _, _, button, _, _) => {
