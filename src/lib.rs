@@ -17,7 +17,7 @@ use window::{
     ShouldClose, Size, PollEvent, SwapBuffers,
     CaptureCursor, DrawSize, Title, ExitOnEsc
 };
-use input::{ keyboard, mouse, InputEvent };
+use input::{ keyboard, mouse, Button, InputEvent, Motion };
 use shader_version::opengl::OpenGL;
 use current::{ Get, Modifier, Set };
 
@@ -46,30 +46,39 @@ impl Sdl2Window {
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
         sdl2::init(sdl2::INIT_EVERYTHING);
         let (major, minor) = opengl.get_major_minor();
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMajorVersion, major);
-        sdl2::video::gl_set_attribute(sdl2::video::GLContextMinorVersion, minor);
         sdl2::video::gl_set_attribute(
-            sdl2::video::GLContextProfileMask,
-            sdl2::video::ll::SDL_GL_CONTEXT_PROFILE_CORE as int
+            sdl2::video::GLAttr::GLContextMajorVersion, 
+            major
+        );
+        sdl2::video::gl_set_attribute(
+            sdl2::video::GLAttr::GLContextMinorVersion, 
+            minor
+        );
+        sdl2::video::gl_set_attribute(
+            sdl2::video::GLAttr::GLContextProfileMask,
+            sdl2::video::ll::SDL_GLprofile::SDL_GL_CONTEXT_PROFILE_CORE as int
         );
         if settings.samples != 0 {
-            sdl2::video::gl_set_attribute(sdl2::video::GLMultiSampleBuffers, 1);
             sdl2::video::gl_set_attribute(
-                sdl2::video::GLMultiSampleSamples,
+                sdl2::video::GLAttr::GLMultiSampleBuffers, 
+                1
+            );
+            sdl2::video::gl_set_attribute(
+                sdl2::video::GLAttr::GLMultiSampleSamples,
                 settings.samples as int
             );
         }
 
         let window = sdl2::video::Window::new(
             settings.title.as_slice(),
-            sdl2::video::PosCentered,
-            sdl2::video::PosCentered,
+            sdl2::video::WindowPos::PosCentered,
+            sdl2::video::WindowPos::PosCentered,
             settings.size[0] as int,
             settings.size[1] as int,
             sdl2::video::OPENGL| sdl2::video::RESIZABLE
         ).unwrap();
         if settings.fullscreen {
-            window.set_fullscreen(sdl2::video::FTTrue);
+            window.set_fullscreen(sdl2::video::FullscreenType::FTTrue);
         }
 
         // Send text input events.
@@ -122,13 +131,17 @@ impl PollEvent<InputEvent> for Sdl2Window {
         match self.mouse_relative {
             Some((x, y)) => {
                 self.mouse_relative = None;
-                return Some(input::Move(input::MouseRelative(x, y)));
+                return Some(InputEvent::Move(Motion::MouseRelative(x, y)));
             }
             None => {}
         }
         match sdl2::event::poll_event() {
-            sdl2::event::Event::Quit(_) => { self.should_close = true; }
-            sdl2::event::Event::TextInput(_, _, text) => { return Some(input::Text(text)); }
+            sdl2::event::Event::Quit(_) => {
+                self.should_close = true;
+            }
+            sdl2::event::Event::TextInput(_, _, text) => {
+                return Some(InputEvent::Text(text));
+            }
             sdl2::event::Event::KeyDown(_, _, key, _, _, repeat) => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
@@ -140,37 +153,37 @@ impl PollEvent<InputEvent> for Sdl2Window {
                 && key == sdl2::keycode::KeyCode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(input::Press(input::Keyboard(sdl2_map_key(key))));
+                    return Some(InputEvent::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
             sdl2::event::Event::KeyUp(_, _, key, _, _, repeat) => {
                 if repeat {
                     return self.poll_event()
                 }
-                return Some(input::Release(input::Keyboard(sdl2_map_key(key))));
+                return Some(InputEvent::Release(Button::Keyboard(sdl2_map_key(key))));
             }
             sdl2::event::Event::MouseButtonDown(_, _, _, button, _, _) => {
-                return Some(input::Press(input::Mouse(sdl2_map_mouse(button))));
+                return Some(InputEvent::Press(Button::Mouse(sdl2_map_mouse(button))));
             }
             sdl2::event::Event::MouseButtonUp(_, _, _, button, _, _) => {
-                return Some(input::Release(input::Mouse(sdl2_map_mouse(button))));
+                return Some(InputEvent::Release(Button::Mouse(sdl2_map_mouse(button))));
             }
             sdl2::event::Event::MouseMotion(_, _, _, _, x, y, dx, dy) => {
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
-                return Some(input::Move(input::MouseCursor(x as f64, y as f64)));
+                return Some(InputEvent::Move(Motion::MouseCursor(x as f64, y as f64)));
             },
             sdl2::event::Event::MouseWheel(_, _, _, x, y) => {
-                return Some(input::Move(input::MouseScroll(x as f64, y as f64)));
+                return Some(InputEvent::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::Resized, w, h) => {
-                return Some(input::Resize(w as u32, h as u32));
+                return Some(InputEvent::Resize(w as u32, h as u32));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusGained, _, _) => {
-                return Some(input::Focus(true));
+                return Some(InputEvent::Focus(true));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusLost, _, _) => {
-                return Some(input::Focus(false));
+                return Some(InputEvent::Focus(false));
             }
             _ => {}
         }
