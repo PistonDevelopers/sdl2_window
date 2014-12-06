@@ -56,7 +56,7 @@ impl Sdl2Window {
         );
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextProfileMask,
-            sdl2::video::ll::SDL_GLprofile::SDL_GL_CONTEXT_PROFILE_CORE as int
+            sdl2::video::GLProfile::GLCoreProfile as int
         );
         if settings.samples != 0 {
             sdl2::video::gl_set_attribute(
