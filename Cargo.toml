@@ -15,9 +15,9 @@ authors = [
     "TyOverby <ty@pre-alpha.com>"]
 tags = []
 
-[dependencies.sdl2]
+[dependencies]
 
-git = "https://github.com/AngryLawyer/rust-sdl2"
+sdl2 = "*"
 
 [dependencies.window]
 
