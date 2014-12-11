@@ -17,7 +17,7 @@ use window::{
     ShouldClose, Size, PollEvent, SwapBuffers,
     CaptureCursor, DrawSize, Title, ExitOnEsc
 };
-use input::{ keyboard, mouse, Button, InputEvent, Motion };
+use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
 use current::{ Get, Modifier, Set };
 
@@ -126,12 +126,12 @@ impl SwapBuffers for Sdl2Window {
     }
 }
 
-impl PollEvent<InputEvent> for Sdl2Window {
-    fn poll_event(&mut self) -> Option<InputEvent> {
+impl PollEvent<Input> for Sdl2Window {
+    fn poll_event(&mut self) -> Option<Input> {
         match self.mouse_relative {
             Some((x, y)) => {
                 self.mouse_relative = None;
-                return Some(InputEvent::Move(Motion::MouseRelative(x, y)));
+                return Some(Input::Move(Motion::MouseRelative(x, y)));
             }
             None => {}
         }
@@ -140,7 +140,7 @@ impl PollEvent<InputEvent> for Sdl2Window {
                 self.should_close = true;
             }
             sdl2::event::Event::TextInput(_, _, text) => {
-                return Some(InputEvent::Text(text));
+                return Some(Input::Text(text));
             }
             sdl2::event::Event::KeyDown(_, _, key, _, _, repeat) => {
                 // SDL2 repeats the key down event.
@@ -153,37 +153,37 @@ impl PollEvent<InputEvent> for Sdl2Window {
                 && key == sdl2::keycode::KeyCode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(InputEvent::Press(Button::Keyboard(sdl2_map_key(key))));
+                    return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
             sdl2::event::Event::KeyUp(_, _, key, _, _, repeat) => {
                 if repeat {
                     return self.poll_event()
                 }
-                return Some(InputEvent::Release(Button::Keyboard(sdl2_map_key(key))));
+                return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
             }
             sdl2::event::Event::MouseButtonDown(_, _, _, button, _, _) => {
-                return Some(InputEvent::Press(Button::Mouse(sdl2_map_mouse(button))));
+                return Some(Input::Press(Button::Mouse(sdl2_map_mouse(button))));
             }
             sdl2::event::Event::MouseButtonUp(_, _, _, button, _, _) => {
-                return Some(InputEvent::Release(Button::Mouse(sdl2_map_mouse(button))));
+                return Some(Input::Release(Button::Mouse(sdl2_map_mouse(button))));
             }
             sdl2::event::Event::MouseMotion(_, _, _, _, x, y, dx, dy) => {
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
-                return Some(InputEvent::Move(Motion::MouseCursor(x as f64, y as f64)));
+                return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
             },
             sdl2::event::Event::MouseWheel(_, _, _, x, y) => {
-                return Some(InputEvent::Move(Motion::MouseScroll(x as f64, y as f64)));
+                return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::Resized, w, h) => {
-                return Some(InputEvent::Resize(w as u32, h as u32));
+                return Some(Input::Resize(w as u32, h as u32));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusGained, _, _) => {
-                return Some(InputEvent::Focus(true));
+                return Some(Input::Focus(true));
             }
             sdl2::event::Event::Window(_, _, sdl2::event::WindowEventId::FocusLost, _, _) => {
-                return Some(InputEvent::Focus(false));
+                return Some(Input::Focus(false));
             }
             _ => {}
         }
@@ -245,13 +245,13 @@ pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
 }
 
 /// Maps a SDL2 mouse button to piston-input button.
-pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> mouse::Button {
+pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> MouseButton {
     match button {
-        sdl2::mouse::Mouse::Left => mouse::Button::Left,
-        sdl2::mouse::Mouse::Right => mouse::Button::Right,
-        sdl2::mouse::Mouse::Middle => mouse::Button::Middle,
-        sdl2::mouse::Mouse::X1 => mouse::Button::X1,
-        sdl2::mouse::Mouse::X2 => mouse::Button::X2,
-        sdl2::mouse::Mouse::Unknown(_) => mouse::Button::Unknown,
+        sdl2::mouse::Mouse::Left => MouseButton::Left,
+        sdl2::mouse::Mouse::Right => MouseButton::Right,
+        sdl2::mouse::Mouse::Middle => MouseButton::Middle,
+        sdl2::mouse::Mouse::X1 => MouseButton::X1,
+        sdl2::mouse::Mouse::X2 => MouseButton::X2,
+        sdl2::mouse::Mouse::Unknown(_) => MouseButton::Unknown,
     }
 }
