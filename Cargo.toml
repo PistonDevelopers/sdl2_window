@@ -1,6 +1,6 @@
 [package]
 
-name = "sdl2_window"
+name = "pistoncore-sdl2_window"
 version = "0.0.0"
 authors = [
     "bvssvni <bvssvni@gmail.com>",
@@ -13,23 +13,28 @@ authors = [
     "ccgn",
     "reem",
     "TyOverby <ty@pre-alpha.com>"]
-tags = []
+tags = ["sdl2", "window", "piston"]
+description = "A SDL2 back-end for the Piston game engine"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/pistondevelopers/sdl2_window.git"
+homepage = "https://github.com/pistondevelopers/sdl2_window"
 
 [dependencies.sdl2]
 
 git = "https://github.com/AngryLawyer/rust-sdl2"
 
-[dependencies.window]
+[dependencies.pistoncore-window]
 
 git = "https://github.com/pistondevelopers/window"
+
+[dependencies.pistoncore-input]
+
+git = "https://github.com/pistondevelopers/input"
 
 [dependencies.shader_version]
 
 git = "https://github.com/pistondevelopers/shader_version"
-
-[dependencies.input]
-
-git = "https://github.com/pistondevelopers/input"
 
 [dependencies.gl]
 
@@ -39,3 +44,4 @@ git = "https://github.com/bjz/gl-rs"
 
 name = "sdl2_window"
 path = "src/lib.rs"
+
