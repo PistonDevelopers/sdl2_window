@@ -13,7 +13,7 @@ authors = [
     "ccgn",
     "reem",
     "TyOverby <ty@pre-alpha.com>"]
-tags = ["sdl2", "window", "piston"]
+keywords = ["sdl2", "window", "piston"]
 description = "A SDL2 back-end for the Piston game engine"
 license = "MIT"
 readme = "README.md"
