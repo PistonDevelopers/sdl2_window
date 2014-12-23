@@ -6,6 +6,17 @@ Maintainers: @TyOverby, @bvssvni, @Coeuvre
 
 [How to contribute](https://github.com/PistonDevelopers/piston/blob/master/CONTRIBUTING.md)
 
+
+
+# Installation
+ To use this as a dependency, add the following code to your Cargo.toml file:
+
+```rust
+    [dependencies.pistoncore-sdl2_window]
+    git = "https://github.com/PistonDevelopers/sdl2_game_window"
+```
+
+
 ### How to create a window
 
 ```Rust
