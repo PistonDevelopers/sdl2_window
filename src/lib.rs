@@ -12,14 +12,13 @@ extern crate current;
 // External crates.
 use std::mem::transmute;
 use window::{
-    Window,
     WindowSettings,
     ShouldClose, Size, PollEvent, SwapBuffers,
     CaptureCursor, DrawSize, Title, ExitOnEsc
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
-use current::{ Get, Modifier, Set };
+use current::{ ActOn, Action, GetFrom, SetAt, Set };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -107,37 +106,37 @@ impl Drop for Sdl2Window {
     }
 }
 
-impl Get<ShouldClose> for Sdl2Window {
-    fn get(&self) -> ShouldClose {
-        ShouldClose(self.should_close)
+impl GetFrom<Sdl2Window> for ShouldClose {
+    fn get_from(obj: &Sdl2Window) -> ShouldClose {
+        ShouldClose(obj.should_close)
     }
 }
 
-impl Get<Size> for Sdl2Window {
-    fn get(&self) -> Size {
-        let (w, h) = self.window.get_size();
+impl GetFrom<Sdl2Window> for Size {
+    fn get_from(obj: &Sdl2Window) -> Size {
+        let (w, h) = obj.window.get_size();
         Size([w as u32, h as u32])
     }
 }
 
-impl SwapBuffers for Sdl2Window {
-    fn swap_buffers(&mut self) {
-        self.window.gl_swap_window();
+impl ActOn<Sdl2Window, ()> for SwapBuffers {
+    fn act_on(self, window: &mut Sdl2Window) {
+        window.window.gl_swap_window();
     }
 }
 
-impl PollEvent<Input> for Sdl2Window {
-    fn poll_event(&mut self) -> Option<Input> {
-        match self.mouse_relative {
+impl ActOn<Sdl2Window, Option<Input>> for PollEvent {
+    fn act_on(self, window: &mut Sdl2Window) -> Option<Input> {
+        match window.mouse_relative {
             Some((x, y)) => {
-                self.mouse_relative = None;
+                window.mouse_relative = None;
                 return Some(Input::Move(Motion::MouseRelative(x, y)));
             }
             None => {}
         }
         match sdl2::event::poll_event() {
             sdl2::event::Event::Quit(_) => {
-                self.should_close = true;
+                window.should_close = true;
             }
             sdl2::event::Event::TextInput(_, _, text) => {
                 return Some(Input::Text(text));
@@ -146,19 +145,19 @@ impl PollEvent<Input> for Sdl2Window {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
-                    return self.poll_event()
+                    return window.action(PollEvent)
                 }
 
-                if self.exit_on_esc
+                if window.exit_on_esc
                 && key == sdl2::keycode::KeyCode::Escape {
-                    self.should_close = true;
+                    window.should_close = true;
                 } else {
                     return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
             sdl2::event::Event::KeyUp(_, _, key, _, _, repeat) => {
                 if repeat {
-                    return self.poll_event()
+                    return window.action(PollEvent)
                 }
                 return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
             }
@@ -170,7 +169,7 @@ impl PollEvent<Input> for Sdl2Window {
             }
             sdl2::event::Event::MouseMotion(_, _, _, _, x, y, dx, dy) => {
                 // Send relative move movement next time.
-                self.mouse_relative = Some((dx as f64, dy as f64));
+                window.mouse_relative = Some((dx as f64, dy as f64));
                 return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
             },
             sdl2::event::Event::MouseWheel(_, _, _, x, y) => {
@@ -191,48 +190,48 @@ impl PollEvent<Input> for Sdl2Window {
     }
 }
 
-impl Modifier<Sdl2Window> for CaptureCursor {
-    fn modify(self, _window: &mut Sdl2Window) {
+impl SetAt<Sdl2Window> for CaptureCursor {
+    fn set_at(self, _window: &mut Sdl2Window) {
         let CaptureCursor(enabled) = self;
         sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 }
 
-impl Modifier<Sdl2Window> for ShouldClose {
-    fn modify(self, window: &mut Sdl2Window) {
+impl SetAt<Sdl2Window> for ShouldClose {
+    fn set_at(self, window: &mut Sdl2Window) {
         let ShouldClose(val) = self;
         window.should_close = val;
     }
 }
 
-impl Get<DrawSize> for Sdl2Window {
-    fn get(&self) -> DrawSize {
-        let (w, h) = self.window.get_drawable_size();
+impl GetFrom<Sdl2Window> for DrawSize {
+    fn get_from(obj: &Sdl2Window) -> DrawSize {
+        let (w, h) = obj.window.get_drawable_size();
         DrawSize([w as u32, h as u32])
     }
 }
 
-impl Get<Title> for Sdl2Window {
-    fn get(&self) -> Title {
-        Title(self.window.get_title())
+impl GetFrom<Sdl2Window> for Title {
+    fn get_from(obj: &Sdl2Window) -> Title {
+        Title(obj.window.get_title())
     }
 }
 
-impl Modifier<Sdl2Window> for Title {
-    fn modify(self, window: &mut Sdl2Window) {
+impl SetAt<Sdl2Window> for Title {
+    fn set_at(self, window: &mut Sdl2Window) {
         let Title(val) = self;
         window.window.set_title(val.as_slice());
     }
 }
 
-impl Get<ExitOnEsc> for Sdl2Window {
-    fn get(&self) -> ExitOnEsc {
-        ExitOnEsc(self.exit_on_esc)
+impl GetFrom<Sdl2Window> for ExitOnEsc {
+    fn get_from(obj: &Sdl2Window) -> ExitOnEsc {
+        ExitOnEsc(obj.exit_on_esc)
     }
 }
 
-impl Modifier<Sdl2Window> for ExitOnEsc {
-    fn modify(self, window: &mut Sdl2Window) {
+impl SetAt<Sdl2Window> for ExitOnEsc {
+    fn set_at(self, window: &mut Sdl2Window) {
         let ExitOnEsc(val) = self;
         window.exit_on_esc = val;
     }
