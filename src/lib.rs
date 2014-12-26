@@ -33,13 +33,6 @@ pub struct Sdl2Window {
     exit_on_esc: bool,
 }
 
-#[test]
-fn test_sdl2_window() {
-    fn foo<T: Window>() {}
-
-    foo::<Sdl2Window>();
-}
-
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
