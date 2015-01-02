@@ -7,7 +7,7 @@ extern crate window;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
-extern crate current;
+extern crate quack;
 
 // External crates.
 use std::mem::transmute;
@@ -18,7 +18,7 @@ use window::{
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
-use current::{ ActOn, Action, GetFrom, SetAt, Set };
+use quack::{ ActOn, Action, GetFrom, SetAt, Set };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
