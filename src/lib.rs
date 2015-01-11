@@ -1,4 +1,5 @@
 #![deny(missing_docs)]
+#![allow(unstable)]
 
 //! A SDL2 window back-end for the Piston game engine.
 
@@ -18,7 +19,7 @@ use window::{
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
-use quack::{ ActOn, Action, GetFrom, SetAt, Set };
+use quack::{ ActOn, Action, GetFrom, SetAt, Set, Me };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -48,7 +49,7 @@ impl Sdl2Window {
         );
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextProfileMask,
-            sdl2::video::GLProfile::GLCoreProfile as int
+            sdl2::video::GLProfile::GLCoreProfile as isize
         );
         if settings.samples != 0 {
             sdl2::video::gl_set_attribute(
@@ -57,7 +58,7 @@ impl Sdl2Window {
             );
             sdl2::video::gl_set_attribute(
                 sdl2::video::GLAttr::GLMultiSampleSamples,
-                settings.samples as int
+                settings.samples as isize
             );
         }
 
@@ -65,8 +66,8 @@ impl Sdl2Window {
             settings.title.as_slice(),
             sdl2::video::WindowPos::PosCentered,
             sdl2::video::WindowPos::PosCentered,
-            settings.size[0] as int,
-            settings.size[1] as int,
+            settings.size[0] as isize,
+            settings.size[1] as isize,
             sdl2::video::OPENGL| sdl2::video::RESIZABLE
         ).unwrap();
         if settings.fullscreen {
@@ -99,27 +100,43 @@ impl Drop for Sdl2Window {
     }
 }
 
-impl GetFrom<Sdl2Window> for ShouldClose {
-    fn get_from(obj: &Sdl2Window) -> ShouldClose {
+impl GetFrom for (ShouldClose, Sdl2Window) {
+    type Property = ShouldClose;
+    type Object = Sdl2Window;
+
+    fn get_from(_: Me<Self>, obj: &Sdl2Window) -> ShouldClose {
         ShouldClose(obj.should_close)
     }
 }
 
-impl GetFrom<Sdl2Window> for Size {
-    fn get_from(obj: &Sdl2Window) -> Size {
+impl GetFrom for (Size, Sdl2Window) {
+    type Property = Size;
+    type Object = Sdl2Window;
+
+    fn get_from(_: Me<Self>, obj: &Sdl2Window) -> Size {
         let (w, h) = obj.window.get_size();
         Size([w as u32, h as u32])
     }
 }
 
-impl ActOn<Sdl2Window, ()> for SwapBuffers {
-    fn act_on(self, window: &mut Sdl2Window) {
+impl ActOn<()> for (SwapBuffers, Sdl2Window) {
+    type Action = SwapBuffers;
+    type Object = Sdl2Window;
+
+    fn act_on(_: Me<Self>, _: SwapBuffers, window: &mut Sdl2Window) {
         window.window.gl_swap_window();
     }
 }
 
-impl ActOn<Sdl2Window, Option<Input>> for PollEvent {
-    fn act_on(self, window: &mut Sdl2Window) -> Option<Input> {
+impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
+    type Action = PollEvent;
+    type Object = Sdl2Window;
+
+    fn act_on(
+        _: Me<Self>, 
+        _: PollEvent, 
+        window: &mut Sdl2Window
+    ) -> Option<Input> {
         match window.mouse_relative {
             Some((x, y)) => {
                 window.mouse_relative = None;
@@ -183,49 +200,78 @@ impl ActOn<Sdl2Window, Option<Input>> for PollEvent {
     }
 }
 
-impl SetAt<Sdl2Window> for CaptureCursor {
-    fn set_at(self, _window: &mut Sdl2Window) {
-        let CaptureCursor(enabled) = self;
+impl SetAt for (CaptureCursor, Sdl2Window) {
+    type Property = CaptureCursor;
+    type Object = Sdl2Window;
+
+    fn set_at(
+        _: Me<Self>, 
+        CaptureCursor(enabled): 
+        CaptureCursor, _window: &mut Sdl2Window
+    ) {
         sdl2::mouse::set_relative_mouse_mode(enabled)
     }
 }
 
-impl SetAt<Sdl2Window> for ShouldClose {
-    fn set_at(self, window: &mut Sdl2Window) {
-        let ShouldClose(val) = self;
+impl SetAt for (ShouldClose, Sdl2Window) {
+    type Property = ShouldClose;
+    type Object = Sdl2Window;
+
+    fn set_at(
+        _: Me<Self>, 
+        ShouldClose(val): ShouldClose, 
+        window: &mut Sdl2Window
+    ) {
         window.should_close = val;
     }
 }
 
-impl GetFrom<Sdl2Window> for DrawSize {
-    fn get_from(obj: &Sdl2Window) -> DrawSize {
+impl GetFrom for (DrawSize, Sdl2Window) {
+    type Property = DrawSize;
+    type Object = Sdl2Window;
+
+    fn get_from(_: Me<Self>, obj: &Sdl2Window) -> DrawSize {
         let (w, h) = obj.window.get_drawable_size();
         DrawSize([w as u32, h as u32])
     }
 }
 
-impl GetFrom<Sdl2Window> for Title {
-    fn get_from(obj: &Sdl2Window) -> Title {
+impl GetFrom for (Title, Sdl2Window) {
+    type Property = Title;
+    type Object = Sdl2Window;
+
+    fn get_from(_: Me<Self>, obj: &Sdl2Window) -> Title {
         Title(obj.window.get_title())
     }
 }
 
-impl SetAt<Sdl2Window> for Title {
-    fn set_at(self, window: &mut Sdl2Window) {
-        let Title(val) = self;
+impl SetAt for (Title, Sdl2Window) {
+    type Property = Title;
+    type Object = Sdl2Window;
+
+    fn set_at(_: Me<Self>, Title(val): Title, window: &mut Sdl2Window) {
         window.window.set_title(val.as_slice());
     }
 }
 
-impl GetFrom<Sdl2Window> for ExitOnEsc {
-    fn get_from(obj: &Sdl2Window) -> ExitOnEsc {
+impl GetFrom for (ExitOnEsc, Sdl2Window) {
+    type Property = ExitOnEsc;
+    type Object = Sdl2Window;
+
+    fn get_from(_: Me<Self>, obj: &Sdl2Window) -> ExitOnEsc {
         ExitOnEsc(obj.exit_on_esc)
     }
 }
 
-impl SetAt<Sdl2Window> for ExitOnEsc {
-    fn set_at(self, window: &mut Sdl2Window) {
-        let ExitOnEsc(val) = self;
+impl SetAt for (ExitOnEsc, Sdl2Window) {
+    type Property = ExitOnEsc;
+    type Object = Sdl2Window;
+
+    fn set_at(
+        _: Me<Self>, 
+        ExitOnEsc(val): ExitOnEsc, 
+        window: &mut Sdl2Window
+    ) {
         window.exit_on_esc = val;
     }
 }
