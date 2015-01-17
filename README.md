@@ -37,10 +37,12 @@ let mut window = Sdl2Window::new(
 After you have created a window, do the following:
 
 ```Rust
+use quack::Get;
+
 let mut device = gfx::GlDevice::new(|s| unsafe {
     transmute(sdl2::video::gl_get_proc_address(s))
 });
-let (w, h) = window.get_size();
+let Size([w, h]) = window.get();
 let frame = gfx::Frame::new(w as u16, h as u16);
 ```
 
