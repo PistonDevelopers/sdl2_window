@@ -104,7 +104,6 @@ impl GetFrom for (ShouldClose, Sdl2Window) {
     type Property = ShouldClose;
     type Object = Sdl2Window;
 
-    // fn get_from(_: Me<Self>, obj: &Sdl2Window) -> ShouldClose {
     fn get_from(obj: &Sdl2Window) -> ShouldClose {
         ShouldClose(obj.should_close)
     }
