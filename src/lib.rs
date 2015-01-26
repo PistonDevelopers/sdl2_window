@@ -41,15 +41,15 @@ impl Sdl2Window {
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextMajorVersion, 
-            major
+            major as i32
         );
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextMinorVersion, 
-            minor
+            minor as i32
         );
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextProfileMask,
-            sdl2::video::GLProfile::GLCoreProfile as isize
+            sdl2::video::GLProfile::GLCoreProfile as i32
         );
         if settings.samples != 0 {
             sdl2::video::gl_set_attribute(
@@ -58,7 +58,7 @@ impl Sdl2Window {
             );
             sdl2::video::gl_set_attribute(
                 sdl2::video::GLAttr::GLMultiSampleSamples,
-                settings.samples as isize
+                settings.samples as i32
             );
         }
 
@@ -66,8 +66,8 @@ impl Sdl2Window {
             settings.title.as_slice(),
             sdl2::video::WindowPos::PosCentered,
             sdl2::video::WindowPos::PosCentered,
-            settings.size[0] as isize,
-            settings.size[1] as isize,
+            settings.size[0] as i32,
+            settings.size[1] as i32,
             sdl2::video::OPENGL| sdl2::video::RESIZABLE
         ).unwrap();
         if settings.fullscreen {
