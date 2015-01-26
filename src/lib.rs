@@ -101,18 +101,12 @@ impl Drop for Sdl2Window {
 }
 
 impl GetFrom for (ShouldClose, Sdl2Window) {
-    type Property = ShouldClose;
-    type Object = Sdl2Window;
-
     fn get_from(obj: &Sdl2Window) -> ShouldClose {
         ShouldClose(obj.should_close)
     }
 }
 
 impl GetFrom for (Size, Sdl2Window) {
-    type Property = Size;
-    type Object = Sdl2Window;
-
     fn get_from(obj: &Sdl2Window) -> Size {
         let (w, h) = obj.window.get_size();
         Size([w as u32, h as u32])
@@ -120,18 +114,12 @@ impl GetFrom for (Size, Sdl2Window) {
 }
 
 impl ActOn<()> for (SwapBuffers, Sdl2Window) {
-    type Action = SwapBuffers;
-    type Object = Sdl2Window;
-
     fn act_on(_: SwapBuffers, window: &mut Sdl2Window) {
         window.window.gl_swap_window();
     }
 }
 
 impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
-    type Action = PollEvent;
-    type Object = Sdl2Window;
-
     fn act_on(
         _: PollEvent, 
         window: &mut Sdl2Window
@@ -200,9 +188,6 @@ impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
 }
 
 impl SetAt for (CaptureCursor, Sdl2Window) {
-    type Property = CaptureCursor;
-    type Object = Sdl2Window;
-
     fn set_at(
         CaptureCursor(enabled): 
         CaptureCursor, _window: &mut Sdl2Window
@@ -212,9 +197,6 @@ impl SetAt for (CaptureCursor, Sdl2Window) {
 }
 
 impl SetAt for (ShouldClose, Sdl2Window) {
-    type Property = ShouldClose;
-    type Object = Sdl2Window;
-
     fn set_at(
         ShouldClose(val): ShouldClose, 
         window: &mut Sdl2Window
@@ -224,9 +206,6 @@ impl SetAt for (ShouldClose, Sdl2Window) {
 }
 
 impl GetFrom for (DrawSize, Sdl2Window) {
-    type Property = DrawSize;
-    type Object = Sdl2Window;
-
     fn get_from(obj: &Sdl2Window) -> DrawSize {
         let (w, h) = obj.window.get_drawable_size();
         DrawSize([w as u32, h as u32])
@@ -234,36 +213,24 @@ impl GetFrom for (DrawSize, Sdl2Window) {
 }
 
 impl GetFrom for (Title, Sdl2Window) {
-    type Property = Title;
-    type Object = Sdl2Window;
-
     fn get_from(obj: &Sdl2Window) -> Title {
         Title(obj.window.get_title())
     }
 }
 
 impl SetAt for (Title, Sdl2Window) {
-    type Property = Title;
-    type Object = Sdl2Window;
-
     fn set_at(Title(val): Title, window: &mut Sdl2Window) {
         window.window.set_title(val.as_slice());
     }
 }
 
 impl GetFrom for (ExitOnEsc, Sdl2Window) {
-    type Property = ExitOnEsc;
-    type Object = Sdl2Window;
-
     fn get_from(obj: &Sdl2Window) -> ExitOnEsc {
         ExitOnEsc(obj.exit_on_esc)
     }
 }
 
 impl SetAt for (ExitOnEsc, Sdl2Window) {
-    type Property = ExitOnEsc;
-    type Object = Sdl2Window;
-
     fn set_at(
         ExitOnEsc(val): ExitOnEsc, 
         window: &mut Sdl2Window
