@@ -1,5 +1,5 @@
 #![deny(missing_docs)]
-#![allow(unstable)]
+#![feature(core)]
 
 //! A SDL2 window back-end for the Piston game engine.
 
