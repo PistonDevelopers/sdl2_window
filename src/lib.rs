@@ -8,6 +8,7 @@ extern crate window;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
+#[macro_use]
 extern crate quack;
 
 // External crates.
@@ -19,7 +20,7 @@ use window::{
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
-use quack::{ ActOn, Action, GetFrom, SetAt, Set };
+use quack::{ Set };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -92,48 +93,18 @@ impl Sdl2Window {
             mouse_relative: None,
         }
     }
-}
 
-impl Drop for Sdl2Window {
-    fn drop(&mut self) {
-        self.set_mut(CaptureCursor(false));
-    }
-}
-
-impl GetFrom for (ShouldClose, Sdl2Window) {
-    fn get_from(obj: &Sdl2Window) -> ShouldClose {
-        ShouldClose(obj.should_close)
-    }
-}
-
-impl GetFrom for (Size, Sdl2Window) {
-    fn get_from(obj: &Sdl2Window) -> Size {
-        let (w, h) = obj.window.get_size();
-        Size([w as u32, h as u32])
-    }
-}
-
-impl ActOn<()> for (SwapBuffers, Sdl2Window) {
-    fn act_on(_: SwapBuffers, window: &mut Sdl2Window) {
-        window.window.gl_swap_window();
-    }
-}
-
-impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
-    fn act_on(
-        _: PollEvent, 
-        window: &mut Sdl2Window
-    ) -> Option<Input> {
-        match window.mouse_relative {
+    fn poll_event(&mut self) -> Option<Input> {
+        match self.mouse_relative {
             Some((x, y)) => {
-                window.mouse_relative = None;
+                self.mouse_relative = None;
                 return Some(Input::Move(Motion::MouseRelative(x, y)));
             }
             None => {}
         }
         match sdl2::event::poll_event() {
             sdl2::event::Event::Quit{..} => {
-                window.should_close = true;
+                self.should_close = true;
             }
             sdl2::event::Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
@@ -142,19 +113,19 @@ impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
-                    return window.action(PollEvent)
+                    return self.poll_event()
                 }
 
-                if window.exit_on_esc
+                if self.exit_on_esc
                 && key == sdl2::keycode::KeyCode::Escape {
-                    window.should_close = true;
+                    self.should_close = true;
                 } else {
                     return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
             sdl2::event::Event::KeyUp { keycode: key, repeat, .. } => {
                 if repeat {
-                    return window.action(PollEvent)
+                    return self.poll_event()
                 }
                 return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
             }
@@ -166,7 +137,7 @@ impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
             }
             sdl2::event::Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
                 // Send relative move movement next time.
-                window.mouse_relative = Some((dx as f64, dy as f64));
+                self.mouse_relative = Some((dx as f64, dy as f64));
                 return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
             },
             sdl2::event::Event::MouseWheel { x, y, .. } => {
@@ -187,56 +158,36 @@ impl ActOn<Option<Input>> for (PollEvent, Sdl2Window) {
     }
 }
 
-impl SetAt for (CaptureCursor, Sdl2Window) {
-    fn set_at(
-        CaptureCursor(enabled): 
-        CaptureCursor, _window: &mut Sdl2Window
-    ) {
-        sdl2::mouse::set_relative_mouse_mode(enabled)
+impl Drop for Sdl2Window {
+    fn drop(&mut self) {
+        self.set_mut(CaptureCursor(false));
     }
 }
 
-impl SetAt for (ShouldClose, Sdl2Window) {
-    fn set_at(
-        ShouldClose(val): ShouldClose, 
-        window: &mut Sdl2Window
-    ) {
-        window.should_close = val;
-    }
-}
-
-impl GetFrom for (DrawSize, Sdl2Window) {
-    fn get_from(obj: &Sdl2Window) -> DrawSize {
-        let (w, h) = obj.window.get_drawable_size();
-        DrawSize([w as u32, h as u32])
-    }
-}
-
-impl GetFrom for (Title, Sdl2Window) {
-    fn get_from(obj: &Sdl2Window) -> Title {
-        Title(obj.window.get_title())
-    }
-}
-
-impl SetAt for (Title, Sdl2Window) {
-    fn set_at(Title(val): Title, window: &mut Sdl2Window) {
-        window.window.set_title(val.as_slice());
-    }
-}
-
-impl GetFrom for (ExitOnEsc, Sdl2Window) {
-    fn get_from(obj: &Sdl2Window) -> ExitOnEsc {
-        ExitOnEsc(obj.exit_on_esc)
-    }
-}
-
-impl SetAt for (ExitOnEsc, Sdl2Window) {
-    fn set_at(
-        ExitOnEsc(val): ExitOnEsc, 
-        window: &mut Sdl2Window
-    ) {
-        window.exit_on_esc = val;
-    }
+quack! {
+    _obj: Sdl2Window[]
+    get:
+        fn () -> ShouldClose { ShouldClose(_obj.should_close) }
+        fn () -> Size {
+            let (w, h) = _obj.window.get_size();
+            Size([w as u32, h as u32])
+        }
+        fn () -> DrawSize {
+            let (w, h) = _obj.window.get_drawable_size();
+            DrawSize([w as u32, h as u32])
+        }
+        fn () -> Title { Title(_obj.window.get_title()) }
+        fn () -> ExitOnEsc { ExitOnEsc(_obj.exit_on_esc) }
+    set:
+        fn (val: CaptureCursor) {
+            sdl2::mouse::set_relative_mouse_mode(val.0)
+        }
+        fn (val: ShouldClose) { _obj.should_close = val.0 }
+        fn (val: Title) { _obj.window.set_title(val.0.as_slice()) }
+        fn (val: ExitOnEsc) { _obj.exit_on_esc = val.0 }
+    action:
+        fn (__: SwapBuffers) -> () { _obj.window.gl_swap_window() }
+        fn (__: PollEvent) -> Option<Input> { _obj.poll_event() }
 }
 
 /// Maps a SDL2 key to piston-input key.
