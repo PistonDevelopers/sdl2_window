@@ -167,27 +167,27 @@ impl Drop for Sdl2Window {
 quack! {
     _obj: Sdl2Window[]
     get:
-        fn () -> ShouldClose { ShouldClose(_obj.should_close) }
-        fn () -> Size {
+        fn () -> ShouldClose [] { ShouldClose(_obj.should_close) }
+        fn () -> Size [] {
             let (w, h) = _obj.window.get_size();
             Size([w as u32, h as u32])
         }
-        fn () -> DrawSize {
+        fn () -> DrawSize [] {
             let (w, h) = _obj.window.get_drawable_size();
             DrawSize([w as u32, h as u32])
         }
-        fn () -> Title { Title(_obj.window.get_title()) }
-        fn () -> ExitOnEsc { ExitOnEsc(_obj.exit_on_esc) }
+        fn () -> Title [] { Title(_obj.window.get_title()) }
+        fn () -> ExitOnEsc [] { ExitOnEsc(_obj.exit_on_esc) }
     set:
-        fn (val: CaptureCursor) {
+        fn (val: CaptureCursor) [] {
             sdl2::mouse::set_relative_mouse_mode(val.0)
         }
-        fn (val: ShouldClose) { _obj.should_close = val.0 }
-        fn (val: Title) { _obj.window.set_title(val.0.as_slice()) }
-        fn (val: ExitOnEsc) { _obj.exit_on_esc = val.0 }
+        fn (val: ShouldClose) [] { _obj.should_close = val.0 }
+        fn (val: Title) [] { _obj.window.set_title(val.0.as_slice()) }
+        fn (val: ExitOnEsc) [] { _obj.exit_on_esc = val.0 }
     action:
-        fn (__: SwapBuffers) -> () { _obj.window.gl_swap_window() }
-        fn (__: PollEvent) -> Option<Input> { _obj.poll_event() }
+        fn (__: SwapBuffers) -> () [] { _obj.window.gl_swap_window() }
+        fn (__: PollEvent) -> Option<Input> [] { _obj.poll_event() }
 }
 
 /// Maps a SDL2 key to piston-input key.
