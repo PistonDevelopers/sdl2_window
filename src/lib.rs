@@ -20,7 +20,7 @@ use window::{
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use shader_version::opengl::OpenGL;
-use quack::{ Set };
+use quack::{ Associative, Set };
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -188,6 +188,10 @@ quack! {
     action:
         fn (__: SwapBuffers) -> () [] { _obj.window.gl_swap_window() }
         fn (__: PollEvent) -> Option<Input> [] { _obj.poll_event() }
+}
+
+impl Associative for (PollEvent, Sdl2Window) {
+    type Type = Input;
 }
 
 /// Maps a SDL2 key to piston-input key.
