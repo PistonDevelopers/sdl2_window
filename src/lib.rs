@@ -193,7 +193,7 @@ quack! {
             sdl2::mouse::set_relative_mouse_mode(val.0)
         }
         fn (val: ShouldClose) [] { _obj.should_close = val.0 }
-        fn (val: Title) [] { _obj.window.set_title(val.0.as_slice()) }
+        fn (val: Title) [] { _obj.window.set_title(val.0.as_slice()).unwrap() }
         fn (val: ExitOnEsc) [] { _obj.exit_on_esc = val.0 }
     action:
         fn (__: SwapBuffers) -> () [] { _obj.window.gl_swap_window() }
