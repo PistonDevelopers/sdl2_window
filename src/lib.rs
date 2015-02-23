@@ -30,6 +30,8 @@ pub struct Sdl2Window {
     /// Will be released on drop.
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
+    /// SDL context
+    pub sdl_context: sdl2::Sdl,
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
@@ -38,7 +40,7 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
-        sdl2::init(sdl2::INIT_EVERYTHING);
+        let sdl_context = sdl2::init(sdl2::INIT_EVERYTHING).unwrap();
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(
             sdl2::video::GLAttr::GLContextMajorVersion, 
@@ -90,11 +92,19 @@ impl Sdl2Window {
             should_close: false,
             window: window,
             context: context,
+            sdl_context: sdl_context,
             mouse_relative: None,
         }
     }
 
     fn poll_event(&mut self) -> Option<Input> {
+        // Even though we create a new EventPump each time we poll an event
+        // this should be a problem since it only contains phantom data
+        // and therefore should actually not have any overhead.
+        let event = match self.sdl_context.event_pump().poll_event() {
+            Some( ev ) => ev,
+            None => return None
+        };
         match self.mouse_relative {
             Some((x, y)) => {
                 self.mouse_relative = None;
@@ -102,7 +112,7 @@ impl Sdl2Window {
             }
             None => {}
         }
-        match sdl2::event::poll_event() {
+        match event {
             sdl2::event::Event::Quit{..} => {
                 self.should_close = true;
             }
