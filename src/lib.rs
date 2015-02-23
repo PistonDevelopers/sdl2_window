@@ -99,7 +99,7 @@ impl Sdl2Window {
 
     fn poll_event(&mut self) -> Option<Input> {
         // Even though we create a new EventPump each time we poll an event
-        // this should be a problem since it only contains phantom data
+        // this should not be a problem since it only contains phantom data
         // and therefore should actually not have any overhead.
         let event = match self.sdl_context.event_pump().poll_event() {
             Some( ev ) => ev,
