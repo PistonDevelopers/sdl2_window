@@ -98,13 +98,7 @@ impl Sdl2Window {
     }
 
     fn poll_event(&mut self) -> Option<Input> {
-        // Even though we create a new EventPump each time we poll an event
-        // this should not be a problem since it only contains phantom data
-        // and therefore should actually not have any overhead.
-        let event = match self.sdl_context.event_pump().poll_event() {
-            Some( ev ) => ev,
-            None => return None
-        };
+        // First check for a pending relative mouse move event.
         match self.mouse_relative {
             Some((x, y)) => {
                 self.mouse_relative = None;
@@ -112,6 +106,14 @@ impl Sdl2Window {
             }
             None => {}
         }
+
+        // Even though we create a new EventPump each time we poll an event
+        // this should not be a problem since it only contains phantom data
+        // and therefore should actually not have any overhead.
+        let event = match self.sdl_context.event_pump().poll_event() {
+            Some( ev ) => ev,
+            None => return None
+        };
         match event {
             sdl2::event::Event::Quit{..} => {
                 self.should_close = true;
