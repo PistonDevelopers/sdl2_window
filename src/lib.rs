@@ -20,8 +20,9 @@ use window::{
     CaptureCursor, DrawSize, Title, ExitOnEsc
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
-use shader_version::OpenGL;
 use quack::{ Associative, Set };
+
+pub use shader_version::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
