@@ -44,6 +44,8 @@ git = "https://github.com/bjz/gl-rs"
 git = "https://github.com/PistonDevelopers/quack"
 #version = "0.0.13"
 
+[dependencies.libc]
+
 
 [lib]
 
