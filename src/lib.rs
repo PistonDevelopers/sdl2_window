@@ -8,6 +8,7 @@ extern crate window;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
+extern crate libc;
 #[macro_use]
 extern crate quack;
 
@@ -19,7 +20,7 @@ use window::{
     CaptureCursor, DrawSize, Title, ExitOnEsc
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
-use shader_version::opengl::OpenGL;
+use shader_version::OpenGL;
 use quack::{ Associative, Set };
 
 /// A widow implemented by SDL2 back-end.
@@ -73,7 +74,7 @@ impl Sdl2Window {
         }
 
         let window = sdl2::video::Window::new(
-            settings.title.as_slice(),
+            &settings.title,
             sdl2::video::WindowPos::PosCentered,
             sdl2::video::WindowPos::PosCentered,
             settings.size[0] as i32,
@@ -90,8 +91,8 @@ impl Sdl2Window {
         let context = window.gl_create_context().unwrap();
 
         // Load the OpenGL function pointers
-        gl::load_with(|s| unsafe {
-            transmute(sdl2::video::gl_get_proc_address(s))
+        gl::load_with(|s| {
+            Sdl2Window::get_proc_address(s)
         });
 
         Sdl2Window {
@@ -101,6 +102,13 @@ impl Sdl2Window {
             context: context,
             sdl_context: sdl_context,
             mouse_relative: None,
+        }
+    }
+
+    /// Returns the address of an OpenGL function if it exist, else returns null pointer.
+    pub fn get_proc_address(proc_name: &str) -> *const libc::c_void {
+        unsafe {
+            transmute(sdl2::video::gl_get_proc_address(proc_name))
         }
     }
 
@@ -202,7 +210,7 @@ quack! {
             sdl2::mouse::set_relative_mouse_mode(val.0)
         }
         fn (val: ShouldClose) [] { _obj.should_close = val.0 }
-        fn (val: Title) [] { _obj.window.set_title(val.0.as_slice()).unwrap() }
+        fn (val: Title) [] { _obj.window.set_title(&val.0).unwrap() }
         fn (val: ExitOnEsc) [] { _obj.exit_on_esc = val.0 }
     action:
         fn (__: SwapBuffers) -> () [] { _obj.window.gl_swap_window() }
