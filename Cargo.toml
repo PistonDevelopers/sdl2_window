@@ -22,23 +22,23 @@ homepage = "https://github.com/pistondevelopers/sdl2_window"
 
 [dependencies.sdl2]
 git = "https://github.com/AngryLawyer/rust-sdl2"
-#version = "0.0.28"
+#version = "0.0.34"
 
 [dependencies.pistoncore-window]
 git = "https://github.com/pistondevelopers/window"
-#version = "0.0.13"
+#version = "0.0.15"
 
 [dependencies.pistoncore-input]
 git = "https://github.com/pistondevelopers/input"
-#version = "0.0.5"
+#version = "0.0.7"
 
 [dependencies.shader_version]
 git = "https://github.com/pistondevelopers/shader_version"
-#version = "0.0.2"
+#version = "0.0.5"
 
 [dependencies.gl]
 git = "https://github.com/bjz/gl-rs"
-#version = "0.0.9"
+#version = "0.0.12"
 
 [dependencies.quack]
 git = "https://github.com/PistonDevelopers/quack"
