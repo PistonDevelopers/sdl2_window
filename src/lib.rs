@@ -81,7 +81,32 @@ impl Sdl2Window {
             settings.size[0] as i32,
             settings.size[1] as i32,
             sdl2::video::OPENGL| sdl2::video::RESIZABLE
-        ).unwrap();
+        );
+        let window = match window {
+            Ok(w) => w,
+            Err(_) =>
+                if settings.samples != 0 {
+                    // Retry without requiring anti-aliasing.
+                    sdl2::video::gl_set_attribute(
+                        sdl2::video::GLAttr::GLMultiSampleBuffers,
+                        0
+                            );
+                    sdl2::video::gl_set_attribute(
+                        sdl2::video::GLAttr::GLMultiSampleSamples,
+                        0
+                            );
+                    sdl2::video::Window::new(
+                        &settings.title,
+                        sdl2::video::WindowPos::PosCentered,
+                        sdl2::video::WindowPos::PosCentered,
+                        settings.size[0] as i32,
+                        settings.size[1] as i32,
+                        sdl2::video::OPENGL| sdl2::video::RESIZABLE
+                            ).unwrap()
+                } else {
+                    window.unwrap() // Panic.
+                }
+        };
         if settings.fullscreen {
             window.set_fullscreen(sdl2::video::FullscreenType::FTTrue);
         }
