@@ -20,6 +20,10 @@ readme = "README.md"
 repository = "https://github.com/pistondevelopers/sdl2_window.git"
 homepage = "https://github.com/pistondevelopers/sdl2_window"
 
+[lib]
+
+name = "sdl2_window"
+
 [dependencies.sdl2]
 git = "https://github.com/AngryLawyer/rust-sdl2"
 #version = "0.0.34"
@@ -43,12 +47,3 @@ git = "https://github.com/bjz/gl-rs"
 [dependencies.quack]
 git = "https://github.com/PistonDevelopers/quack"
 #version = "0.0.13"
-
-[dependencies.libc]
-
-
-[lib]
-
-name = "sdl2_window"
-path = "src/lib.rs"
-

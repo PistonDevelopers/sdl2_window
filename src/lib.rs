@@ -8,16 +8,23 @@ extern crate window;
 extern crate shader_version;
 extern crate input;
 extern crate gl;
-extern crate libc;
 #[macro_use]
 extern crate quack;
 
 // External crates.
 use std::mem::transmute;
 use window::{
+    OpenGLWindow,
+    ProcAddress,
     WindowSettings,
-    ShouldClose, Size, PollEvent, SwapBuffers,
-    CaptureCursor, DrawSize, Title, ExitOnEsc
+    ShouldClose,
+    Size,
+    PollEvent,
+    SwapBuffers,
+    CaptureCursor,
+    DrawSize,
+    Title,
+    ExitOnEsc
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 use quack::{ Associative, Set };
@@ -26,13 +33,13 @@ pub use shader_version::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
-    /// SDL window handle
+    /// SDL window handle.
     pub window: sdl2::video::Window,
     /// Allow dead code because this keeps track of the OpenGL context.
     /// Will be released on drop.
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
-    /// SDL context
+    /// SDL context.
     pub sdl_context: sdl2::Sdl,
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
@@ -43,20 +50,20 @@ impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
         let sdl_context = sdl2::init(sdl2::INIT_EVERYTHING).unwrap();
-        
-        // Not all drivers default to 32bit color, so explicitly set it to 32bit color
+
+        // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLRedSize, 8);
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLGreenSize, 8);
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLBlueSize, 8);
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLAlphaSize, 8);
-        
+
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(
-            sdl2::video::GLAttr::GLContextMajorVersion, 
+            sdl2::video::GLAttr::GLContextMajorVersion,
             major as i32
         );
         sdl2::video::gl_set_attribute(
-            sdl2::video::GLAttr::GLContextMinorVersion, 
+            sdl2::video::GLAttr::GLContextMinorVersion,
             minor as i32
         );
         sdl2::video::gl_set_attribute(
@@ -65,7 +72,7 @@ impl Sdl2Window {
         );
         if settings.samples != 0 {
             sdl2::video::gl_set_attribute(
-                sdl2::video::GLAttr::GLMultiSampleBuffers, 
+                sdl2::video::GLAttr::GLMultiSampleBuffers,
                 1
             );
             sdl2::video::gl_set_attribute(
@@ -116,9 +123,9 @@ impl Sdl2Window {
 
         let context = window.gl_create_context().unwrap();
 
-        // Load the OpenGL function pointers
-        gl::load_with(|s| {
-            Sdl2Window::get_proc_address(s)
+        // Load the OpenGL function pointers.
+        gl::load_with(|s| unsafe {
+            transmute(sdl2::video::gl_get_proc_address(s))
         });
 
         Sdl2Window {
@@ -128,13 +135,6 @@ impl Sdl2Window {
             context: context,
             sdl_context: sdl_context,
             mouse_relative: None,
-        }
-    }
-
-    /// Returns the address of an OpenGL function if it exist, else returns null pointer.
-    pub fn get_proc_address(proc_name: &str) -> *const libc::c_void {
-        unsafe {
-            transmute(sdl2::video::gl_get_proc_address(proc_name))
         }
     }
 
@@ -196,7 +196,8 @@ impl Sdl2Window {
             sdl2::event::Event::MouseWheel { x, y, .. } => {
                 return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
-            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
+            sdl2::event::Event::Window {
+                win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 return Some(Input::Resize(w as u32, h as u32));
             }
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusGained, .. } => {
@@ -245,6 +246,22 @@ quack! {
 
 impl Associative for (PollEvent, Sdl2Window) {
     type Type = Input;
+}
+
+impl OpenGLWindow for Sdl2Window {
+    fn get_proc_address(&mut self, proc_name: &str) -> ProcAddress {
+        unsafe {
+            transmute(sdl2::video::gl_get_proc_address(proc_name))
+        }
+    }
+
+    fn is_current(&self) -> bool {
+        self.context == sdl2::video::gl_get_current_context().unwrap()
+    }
+
+    fn make_current(&mut self) {
+        self.window.gl_make_current(&self.context);
+    }
 }
 
 /// Maps a SDL2 key to piston-input key.
