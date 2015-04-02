@@ -14,7 +14,6 @@ extern crate quack;
 // External crates.
 use std::mem::transmute;
 use window::{
-    OpenGLWindow,
     ProcAddress,
     WindowSettings,
     ShouldClose,
@@ -30,6 +29,7 @@ use input::{ keyboard, Button, MouseButton, Input, Motion };
 use quack::{ Associative, Set };
 
 pub use shader_version::OpenGL;
+pub use window::OpenGLWindow;
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
