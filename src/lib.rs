@@ -243,7 +243,12 @@ impl OpenGLWindow for Sdl2Window {
     }
 
     fn is_current(&self) -> bool {
-        self.context == sdl2::video::gl_get_current_context().unwrap()
+        unsafe {
+            let this_context = self.context.raw();
+            let current_context = sdl2::video::gl_get_current_context().unwrap().raw();
+
+            this_context == current_context
+        }
     }
 
     fn make_current(&mut self) {
