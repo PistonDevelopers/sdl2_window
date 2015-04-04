@@ -1,35 +1,26 @@
 #![deny(missing_docs)]
-#![feature(core)]
 
 //! A SDL2 window back-end for the Piston game engine.
 
 extern crate sdl2;
-extern crate window;
+extern crate piston;
 extern crate shader_version;
-extern crate input;
 extern crate gl;
-#[macro_use]
-extern crate quack;
+extern crate num;
 
 // External crates.
 use std::mem::transmute;
-use window::{
+use piston::window::{
     ProcAddress,
+    Window,
+    AdvancedWindow,
     WindowSettings,
-    ShouldClose,
+    OpenGLWindow,
     Size,
-    PollEvent,
-    SwapBuffers,
-    CaptureCursor,
-    DrawSize,
-    Title,
-    ExitOnEsc
 };
-use input::{ keyboard, Button, MouseButton, Input, Motion };
-use quack::{ Associative, Set };
+use piston::input::{ keyboard, Button, MouseButton, Input, Motion };
 
 pub use shader_version::OpenGL;
-pub use window::OpenGLWindow;
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -70,29 +61,29 @@ impl Sdl2Window {
             sdl2::video::GLAttr::GLContextProfileMask,
             sdl2::video::GLProfile::GLCoreProfile as i32
         );
-        if settings.samples != 0 {
+        if settings.get_samples() != 0 {
             sdl2::video::gl_set_attribute(
                 sdl2::video::GLAttr::GLMultiSampleBuffers,
                 1
             );
             sdl2::video::gl_set_attribute(
                 sdl2::video::GLAttr::GLMultiSampleSamples,
-                settings.samples as i32
+                settings.get_samples() as i32
             );
         }
 
         let window = sdl2::video::Window::new(
-            &settings.title,
+            &settings.get_title(),
             sdl2::video::WindowPos::PosCentered,
             sdl2::video::WindowPos::PosCentered,
-            settings.size[0] as i32,
-            settings.size[1] as i32,
+            settings.get_size().width as i32,
+            settings.get_size().height as i32,
             sdl2::video::OPENGL| sdl2::video::RESIZABLE
         );
         let window = match window {
             Ok(w) => w,
             Err(_) =>
-                if settings.samples != 0 {
+                if settings.get_samples() != 0 {
                     // Retry without requiring anti-aliasing.
                     sdl2::video::gl_set_attribute(
                         sdl2::video::GLAttr::GLMultiSampleBuffers,
@@ -103,18 +94,18 @@ impl Sdl2Window {
                         0
                             );
                     sdl2::video::Window::new(
-                        &settings.title,
+                        &settings.get_title(),
                         sdl2::video::WindowPos::PosCentered,
                         sdl2::video::WindowPos::PosCentered,
-                        settings.size[0] as i32,
-                        settings.size[1] as i32,
+                        settings.get_size().width as i32,
+                        settings.get_size().height as i32,
                         sdl2::video::OPENGL| sdl2::video::RESIZABLE
                             ).unwrap()
                 } else {
                     window.unwrap() // Panic.
                 }
         };
-        if settings.fullscreen {
+        if settings.get_fullscreen() {
             window.set_fullscreen(sdl2::video::FullscreenType::FTTrue);
         }
 
@@ -129,7 +120,7 @@ impl Sdl2Window {
         });
 
         Sdl2Window {
-            exit_on_esc: settings.exit_on_esc,
+            exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
             window: window,
             context: context,
@@ -214,38 +205,34 @@ impl Sdl2Window {
 
 impl Drop for Sdl2Window {
     fn drop(&mut self) {
-        self.set_mut(CaptureCursor(false));
+        self.set_capture_cursor(false);
     }
 }
 
-quack! {
-    _obj: Sdl2Window[]
-    get:
-        fn () -> ShouldClose [] { ShouldClose(_obj.should_close) }
-        fn () -> Size [] {
-            let (w, h) = _obj.window.get_size();
-            Size([w as u32, h as u32])
-        }
-        fn () -> DrawSize [] {
-            let (w, h) = _obj.window.get_drawable_size();
-            DrawSize([w as u32, h as u32])
-        }
-        fn () -> Title [] { Title(_obj.window.get_title()) }
-        fn () -> ExitOnEsc [] { ExitOnEsc(_obj.exit_on_esc) }
-    set:
-        fn (val: CaptureCursor) [] {
-            sdl2::mouse::set_relative_mouse_mode(val.0)
-        }
-        fn (val: ShouldClose) [] { _obj.should_close = val.0 }
-        fn (val: Title) [] { _obj.window.set_title(&val.0).unwrap() }
-        fn (val: ExitOnEsc) [] { _obj.exit_on_esc = val.0 }
-    action:
-        fn (__: SwapBuffers) -> () [] { _obj.window.gl_swap_window() }
-        fn (__: PollEvent) -> Option<Input> [] { _obj.poll_event() }
+impl Window for Sdl2Window {
+    type Event = Input;
+
+    fn should_close(&self) -> bool { self.should_close }
+    fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
+    fn size(&self) -> Size {
+        let (w, h) = self.window.get_size();
+        Size { width: w as u32, height: h as u32 }
+    }
+    fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
 }
 
-impl Associative for (PollEvent, Sdl2Window) {
-    type Type = Input;
+impl AdvancedWindow for Sdl2Window {
+    fn get_title(&self) -> String { self.window.get_title() }
+    fn set_title(&mut self, value: String) { let _ = self.window.set_title(&value); }
+    fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
+    fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
+    fn set_capture_cursor(&mut self, value: bool) {
+        sdl2::mouse::set_relative_mouse_mode(value);
+    }
+    fn draw_size(&self) -> Size {
+        let (w, h) = self.window.get_size();
+        Size { width: w as u32, height: h as u32 }
+    }
 }
 
 impl OpenGLWindow for Sdl2Window {
@@ -266,7 +253,7 @@ impl OpenGLWindow for Sdl2Window {
 
 /// Maps a SDL2 key to piston-input key.
 pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
-    use std::num::FromPrimitive;
+    use num::FromPrimitive;
     FromPrimitive::from_u64(keycode as u64).unwrap()
 }
 
