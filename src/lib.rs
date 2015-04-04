@@ -15,11 +15,11 @@ use piston::window::{
     Window,
     AdvancedWindow,
     WindowSettings,
-    OpenGLWindow,
     Size,
 };
 use piston::input::{ keyboard, Button, MouseButton, Input, Motion };
 
+pub use piston::window::OpenGLWindow;
 pub use shader_version::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
