@@ -11,6 +11,7 @@ extern crate num;
 // External crates.
 use std::mem::transmute;
 use piston::window::{
+    OpenGLWindow,
     ProcAddress,
     Window,
     AdvancedWindow,
@@ -19,7 +20,6 @@ use piston::window::{
 };
 use piston::input::{ keyboard, Button, MouseButton, Input, Motion };
 
-pub use piston::window::OpenGLWindow;
 pub use shader_version::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
