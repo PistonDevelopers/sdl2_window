@@ -219,6 +219,10 @@ impl Window for Sdl2Window {
         Size { width: w as u32, height: h as u32 }
     }
     fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
+    fn draw_size(&self) -> Size {
+        let (w, h) = self.window.get_size();
+        Size { width: w as u32, height: h as u32 }
+    }
 }
 
 impl AdvancedWindow for Sdl2Window {
@@ -228,10 +232,6 @@ impl AdvancedWindow for Sdl2Window {
     fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
     fn set_capture_cursor(&mut self, value: bool) {
         sdl2::mouse::set_relative_mouse_mode(value);
-    }
-    fn draw_size(&self) -> Size {
-        let (w, h) = self.window.get_size();
-        Size { width: w as u32, height: h as u32 }
     }
 }
 
