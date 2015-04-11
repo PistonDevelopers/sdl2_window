@@ -57,10 +57,12 @@ impl Sdl2Window {
             sdl2::video::GLAttr::GLContextMinorVersion,
             minor as i32
         );
-        sdl2::video::gl_set_attribute(
-            sdl2::video::GLAttr::GLContextProfileMask,
-            sdl2::video::GLProfile::GLCoreProfile as i32
-        );
+        if opengl >= OpenGL::_3_2 {
+            sdl2::video::gl_set_attribute(
+                sdl2::video::GLAttr::GLContextProfileMask,
+                sdl2::video::GLProfile::GLCoreProfile as i32
+            );
+        }
         if settings.get_samples() != 0 {
             sdl2::video::gl_set_attribute(
                 sdl2::video::GLAttr::GLMultiSampleBuffers,
