@@ -35,6 +35,8 @@ pub struct Sdl2Window {
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
+    title: String,
+    size: Size
 }
 
 impl Sdl2Window {
@@ -74,13 +76,20 @@ impl Sdl2Window {
             );
         }
 
+        let window_flags = if settings.get_fullscreen() {
+            sdl2::video::OPENGL | sdl2::video::RESIZABLE | sdl2::video::FULLSCREEN
+        } else {
+            sdl2::video::OPENGL | sdl2::video::RESIZABLE
+        };
+
         let window = sdl2::video::Window::new(
+            &sdl_context,
             &settings.get_title(),
             sdl2::video::WindowPos::PosCentered,
             sdl2::video::WindowPos::PosCentered,
             settings.get_size().width as i32,
             settings.get_size().height as i32,
-            sdl2::video::OPENGL| sdl2::video::RESIZABLE
+            window_flags
         );
         let window = match window {
             Ok(w) => w,
@@ -96,20 +105,18 @@ impl Sdl2Window {
                         0
                             );
                     sdl2::video::Window::new(
+                        &sdl_context,
                         &settings.get_title(),
                         sdl2::video::WindowPos::PosCentered,
                         sdl2::video::WindowPos::PosCentered,
                         settings.get_size().width as i32,
                         settings.get_size().height as i32,
-                        sdl2::video::OPENGL| sdl2::video::RESIZABLE
+                        window_flags
                             ).unwrap()
                 } else {
                     window.unwrap() // Panic.
                 }
         };
-        if settings.get_fullscreen() {
-            window.set_fullscreen(sdl2::video::FullscreenType::FTTrue);
-        }
 
         // Send text input events.
         sdl2::keyboard::start_text_input();
@@ -128,6 +135,8 @@ impl Sdl2Window {
             context: context,
             sdl_context: sdl_context,
             mouse_relative: None,
+            title: settings.get_title() ,
+            size: settings.get_size()
         }
     }
 
@@ -191,6 +200,8 @@ impl Sdl2Window {
             }
             sdl2::event::Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
+                self.size.width = w as u32;
+                self.size.height = h as u32;
                 return Some(Input::Resize(w as u32, h as u32));
             }
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusGained, .. } => {
@@ -217,19 +228,23 @@ impl Window for Sdl2Window {
     fn should_close(&self) -> bool { self.should_close }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
     fn size(&self) -> Size {
-        let (w, h) = self.window.get_size();
-        Size { width: w as u32, height: h as u32 }
+        self.size.clone()
     }
     fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
     fn draw_size(&self) -> Size {
-        let (w, h) = self.window.get_size();
-        Size { width: w as u32, height: h as u32 }
+        self.size.clone()
     }
 }
 
 impl AdvancedWindow for Sdl2Window {
-    fn get_title(&self) -> String { self.window.get_title() }
-    fn set_title(&mut self, value: String) { let _ = self.window.set_title(&value); }
+    fn get_title(&self) -> String { 
+        self.title.clone()
+    }
+    fn set_title(&mut self, value: String) { 
+        let event_pump = self.sdl_context.event_pump();
+        let _ = self.window.properties(&event_pump).set_title(&value);
+        self.title = value
+    }
     fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
     fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
     fn set_capture_cursor(&mut self, value: bool) {
@@ -254,7 +269,7 @@ impl OpenGLWindow for Sdl2Window {
     }
 
     fn make_current(&mut self) {
-        self.window.gl_make_current(&self.context);
+        let _ = self.window.gl_make_current(&self.context);
     }
 }
 
