@@ -1,7 +1,7 @@
 [package]
 
 name = "pistoncore-sdl2_window"
-version = "0.0.9"
+version = "0.0.10"
 authors = [
     "bvssvni <bvssvni@gmail.com>",
     "Coeuvre <coeuvre@gmail.com>",
@@ -26,7 +26,7 @@ name = "sdl2_window"
 
 [dependencies.sdl2]
 git = "https://github.com/AngryLawyer/rust-sdl2"
-#version = "0.1.0"
+#version = "0.2.0"
 
 [dependencies.piston]
 git = "https://github.com/pistondevelopers/piston"
