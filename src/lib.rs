@@ -36,7 +36,8 @@ pub struct Sdl2Window {
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
     title: String,
-    size: Size
+    size: Size,
+    draw_size: Size,
 }
 
 impl Sdl2Window {
@@ -128,7 +129,7 @@ impl Sdl2Window {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
 
-        Sdl2Window {
+        let mut window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
             window: window,
@@ -136,9 +137,19 @@ impl Sdl2Window {
             sdl_context: sdl_context,
             mouse_relative: None,
             title: settings.get_title() ,
-            size: settings.get_size()
-        }
+            size: settings.get_size(),
+            draw_size: settings.get_size(),
+        };
+        window.update_draw_size();
+        window
     }
+
+    fn update_draw_size(&mut self) {
+        let event_pump = self.sdl_context.event_pump();
+        let properties = self.window.properties(&event_pump);
+        let (w, h) = properties.get_drawable_size();
+        self.draw_size = Size { width: w as u32, height: h as u32 };
+    }    
 
     fn poll_event(&mut self) -> Option<Input> {
         // First check for a pending relative mouse move event.
@@ -202,6 +213,7 @@ impl Sdl2Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 self.size.width = w as u32;
                 self.size.height = h as u32;
+                self.update_draw_size();
                 return Some(Input::Resize(w as u32, h as u32));
             }
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusGained, .. } => {
@@ -227,13 +239,9 @@ impl Window for Sdl2Window {
 
     fn should_close(&self) -> bool { self.should_close }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
-    fn size(&self) -> Size {
-        self.size.clone()
-    }
+    fn size(&self) -> Size { self.size }
     fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
-    fn draw_size(&self) -> Size {
-        self.size.clone()
-    }
+    fn draw_size(&self) -> Size { self.draw_size }
 }
 
 impl AdvancedWindow for Sdl2Window {
