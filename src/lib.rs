@@ -50,6 +50,7 @@ impl Sdl2Window {
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLGreenSize, 8);
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLBlueSize, 8);
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLAlphaSize, 8);
+        sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLStencilSize, 8);
 
         let (major, minor) = opengl.get_major_minor();
         sdl2::video::gl_set_attribute(
