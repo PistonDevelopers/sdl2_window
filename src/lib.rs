@@ -84,12 +84,6 @@ impl Sdl2Window {
             sdl2::video::OPENGL | sdl2::video::RESIZABLE
         };
 
-        if settings.get_vsync() {
-            sdl2::video::gl_set_swap_interval(1);
-        } else {
-            sdl2::video::gl_set_swap_interval(0);
-        }
-
         let window = sdl2::video::Window::new(
             &sdl_context,
             &settings.get_title(),
@@ -135,6 +129,12 @@ impl Sdl2Window {
         gl::load_with(|s| unsafe {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
+        
+        if settings.get_vsync() {
+            sdl2::video::gl_set_swap_interval(1);
+        } else {
+            sdl2::video::gl_set_swap_interval(0);
+        }
 
         let mut window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
