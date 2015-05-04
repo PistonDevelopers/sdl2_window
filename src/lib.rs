@@ -129,6 +129,12 @@ impl Sdl2Window {
         gl::load_with(|s| unsafe {
             transmute(sdl2::video::gl_get_proc_address(s))
         });
+        
+        if settings.get_vsync() {
+            sdl2::video::gl_set_swap_interval(1);
+        } else {
+            sdl2::video::gl_set_swap_interval(0);
+        }
 
         let mut window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
