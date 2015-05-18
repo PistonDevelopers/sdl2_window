@@ -43,7 +43,7 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(opengl: OpenGL, settings: WindowSettings) -> Sdl2Window {
-        let sdl_context = sdl2::init(sdl2::INIT_EVERYTHING).unwrap();
+        let sdl_context = sdl2::init().everything().unwrap();
 
         // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
         sdl2::video::gl_set_attribute(sdl2::video::GLAttr::GLRedSize, 8);
@@ -78,21 +78,20 @@ impl Sdl2Window {
             );
         }
 
-        let window_flags = if settings.get_fullscreen() {
-            sdl2::video::OPENGL | sdl2::video::RESIZABLE | sdl2::video::FULLSCREEN
+        let mut window_builder = sdl_context.window(&settings.get_title(), settings.get_size().width as u32, settings.get_size().height as u32);
+
+        let window_builder = window_builder.position_centered()
+            .opengl()
+            .resizable();
+
+        let window_builder = if settings.get_fullscreen() {
+            window_builder.fullscreen()
         } else {
-            sdl2::video::OPENGL | sdl2::video::RESIZABLE
+            window_builder
         };
 
-        let window = sdl2::video::Window::new(
-            &sdl_context,
-            &settings.get_title(),
-            sdl2::video::WindowPos::PosCentered,
-            sdl2::video::WindowPos::PosCentered,
-            settings.get_size().width as i32,
-            settings.get_size().height as i32,
-            window_flags
-        );
+        let window = window_builder.build();
+
         let window = match window {
             Ok(w) => w,
             Err(_) =>
@@ -106,15 +105,7 @@ impl Sdl2Window {
                         sdl2::video::GLAttr::GLMultiSampleSamples,
                         0
                             );
-                    sdl2::video::Window::new(
-                        &sdl_context,
-                        &settings.get_title(),
-                        sdl2::video::WindowPos::PosCentered,
-                        sdl2::video::WindowPos::PosCentered,
-                        settings.get_size().width as i32,
-                        settings.get_size().height as i32,
-                        window_flags
-                            ).unwrap()
+                    window_builder.build().unwrap()
                 } else {
                     window.unwrap() // Panic.
                 }
