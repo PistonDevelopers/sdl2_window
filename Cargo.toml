@@ -34,7 +34,7 @@ git = "https://github.com/AngryLawyer/rust-sdl2"
 version = "0.1.2"
 
 [dependencies.shader_version]
-git = "https://github.com/pistondevelopers/shader_version"
+#git = "https://github.com/pistondevelopers/shader_version"
 version = "0.0.6"
 
 [dependencies.gl]
