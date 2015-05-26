@@ -124,8 +124,7 @@ impl Sdl2Window {
     }
 
     fn update_draw_size(&mut self) {
-        let event_pump = self.sdl_context.event_pump();
-        let properties = self.window.properties(&event_pump);
+        let properties = self.window.properties(&self.sdl_context);
         let (w, h) = properties.get_drawable_size();
         self.draw_size = Size { width: w as u32, height: h as u32 };
     }
@@ -225,8 +224,7 @@ impl AdvancedWindow for Sdl2Window {
         self.title.clone()
     }
     fn set_title(&mut self, value: String) {
-        let event_pump = self.sdl_context.event_pump();
-        let _ = self.window.properties(&event_pump).set_title(&value);
+        let _ = self.window.properties(&self.sdl_context).set_title(&value);
         self.title = value
     }
     fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
@@ -242,12 +240,7 @@ impl OpenGLWindow for Sdl2Window {
     }
 
     fn is_current(&self) -> bool {
-        unsafe {
-            let this_context = self.context.raw();
-            let current_context = sdl2::video::gl_get_current_context().unwrap().raw();
-
-            this_context == current_context
-        }
+        self.context.is_current()
     }
 
     fn make_current(&mut self) {
