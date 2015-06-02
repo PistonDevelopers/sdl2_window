@@ -41,10 +41,11 @@ pub struct Sdl2Window {
 
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
-    pub fn new(opengl: OpenGL, settings: WindowSettings) -> Self {
+    pub fn new(settings: WindowSettings) -> Self {
         use sdl2::video::{ GLProfile, gl_attr };
 
         let sdl_context = sdl2::init().everything().unwrap();
+        let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::_3_2);
         let (major, minor) = opengl.get_major_minor();
 
         // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
@@ -200,6 +201,12 @@ impl Sdl2Window {
             _ => {}
         }
         None
+    }
+}
+
+impl From<WindowSettings> for Sdl2Window {
+    fn from(settings: WindowSettings) -> Sdl2Window {
+        Sdl2Window::new(settings)
     }
 }
 
