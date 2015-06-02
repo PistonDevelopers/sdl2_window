@@ -1,7 +1,7 @@
 [package]
 
 name = "pistoncore-sdl2_window"
-version = "0.1.0"
+version = "0.2.0"
 authors = [
     "bvssvni <bvssvni@gmail.com>",
     "Coeuvre <coeuvre@gmail.com>",
@@ -28,6 +28,6 @@ name = "sdl2_window"
 [dependencies]
 num = "0.1.24"
 sdl2 = "0.4"
-piston = "0.1.4"
+piston = "0.1.5"
 shader_version = "0.1.0"
 gl = "0.0.12"
