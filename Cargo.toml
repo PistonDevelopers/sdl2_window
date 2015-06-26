@@ -28,6 +28,7 @@ name = "sdl2_window"
 [dependencies]
 num = "0.1.24"
 sdl2 = "0.5"
-piston = "0.2.2"
+pistoncore-window = "0.1.6"
+pistoncore-input = "0.1.0"
 shader_version = "0.1.0"
 gl = "0.0.12"

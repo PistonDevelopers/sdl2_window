@@ -3,13 +3,14 @@
 //! A SDL2 window back-end for the Piston game engine.
 
 extern crate sdl2;
-extern crate piston;
+extern crate window;
+extern crate input;
 extern crate shader_version;
 extern crate gl;
 extern crate num;
 
 // External crates.
-use piston::window::{
+use window::{
     OpenGLWindow,
     ProcAddress,
     Window,
@@ -17,7 +18,7 @@ use piston::window::{
     WindowSettings,
     Size,
 };
-use piston::input::{ keyboard, Button, MouseButton, Input, Motion };
+use input::{ keyboard, Button, MouseButton, Input, Motion };
 
 pub use shader_version::OpenGL;
 
