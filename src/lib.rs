@@ -151,7 +151,7 @@ impl Sdl2Window {
             sdl2::event::Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
             }
-            sdl2::event::Event::KeyDown { keycode: key, repeat, ..} => {
+            sdl2::event::Event::KeyDown { keycode: Some(key), repeat, ..} => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
@@ -159,13 +159,13 @@ impl Sdl2Window {
                 }
 
                 if self.exit_on_esc
-                && key == sdl2::keycode::KeyCode::Escape {
+                && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
                     return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
-            sdl2::event::Event::KeyUp { keycode: key, repeat, .. } => {
+            sdl2::event::Event::KeyUp { keycode: Some(key), repeat, .. } => {
                 if repeat {
                     return self.poll_event()
                 }
@@ -256,7 +256,7 @@ impl OpenGLWindow for Sdl2Window {
 }
 
 /// Maps a SDL2 key to piston-input key.
-pub fn sdl2_map_key(keycode: sdl2::keycode::KeyCode) -> keyboard::Key {
+pub fn sdl2_map_key(keycode: sdl2::keyboard::Keycode) -> keyboard::Key {
     num::FromPrimitive::from_u64(keycode as u64).unwrap()
 }
 
