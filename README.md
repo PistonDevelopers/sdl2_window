@@ -13,7 +13,7 @@ Maintainers: @TyOverby, @bvssvni, @Coeuvre
 
 ```rust
     [dependencies.pistoncore-sdl2_window]
-    git = "https://github.com/PistonDevelopers/sdl2_game_window"
+    git = "https://github.com/PistonDevelopers/sdl2_window"
 ```
 
 
