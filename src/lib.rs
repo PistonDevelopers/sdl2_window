@@ -46,7 +46,7 @@ impl Sdl2Window {
         use sdl2::video::{ GLProfile, gl_attr };
 
         let sdl_context = sdl2::init().everything().unwrap();
-        let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::_3_2);
+        let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
         let (major, minor) = opengl.get_major_minor();
 
         // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
@@ -57,7 +57,7 @@ impl Sdl2Window {
         gl_attr::set_stencil_size(8);
         gl_attr::set_context_version(major as u8, minor as u8);
 
-        if opengl >= OpenGL::_3_2 {
+        if opengl >= OpenGL::V3_2 {
             gl_attr::set_context_profile(GLProfile::Core);
         }
         if settings.get_samples() != 0 {
