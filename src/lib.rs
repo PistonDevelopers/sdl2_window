@@ -20,6 +20,11 @@ use window::{
 };
 use input::{ keyboard, Button, MouseButton, Input, Motion };
 
+use sdl2::{
+    VideoSubsystem,
+    EventSubsystem
+};
+
 pub use shader_version::OpenGL;
 
 /// A widow implemented by SDL2 back-end.
@@ -30,8 +35,10 @@ pub struct Sdl2Window {
     /// Will be released on drop.
     #[allow(dead_code)]
     pub context: sdl2::video::GLContext,
-    /// SDL context.
-    pub sdl_context: sdl2::Sdl,
+    /// The SDL video subsystem.
+    pub video_subsystem: sdl2::VideoSubsystem,
+    /// The SDL events subsystem.
+    pub event_subsystem: sdl2::EventSubsystem,
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
@@ -41,31 +48,52 @@ pub struct Sdl2Window {
 }
 
 impl Sdl2Window {
-    /// Creates a new game window for SDL2.
-    pub fn new(settings: WindowSettings) -> Self {
-        use sdl2::video::{ GLProfile, gl_attr };
+    /// Creates a new Piston window for SDL2. This will initialize SDL and the
+    /// video and event subsystems.
+    pub fn new(settings: WindowSettings) -> Result<Self, String> {
+        let sdl_context = try!(sdl2::init());
+        let video = try!(sdl_context.video());
+        let mut event = try!(sdl_context.event());
+        Self::new_with_subsystems(video, &mut event, settings)
+    }
 
-        let sdl_context = sdl2::init().everything().unwrap();
+    /// Creates a new window with the supplied video and event subsystems.
+    ///
+    /// ```
+    /// let sdl = sdl2::Sdl::new().unwrap();
+    /// let video = sdl.video().unwrap();
+    /// let event = sdl.event().unwrap();
+    /// let window = Sdl2Window::new_with_subsystems(
+    ///     video.clone(), &mut event,
+    ///     WindowSettings::new("example", (640, 480)));
+    /// ```
+    pub fn new_with_subsystems(video: VideoSubsystem, event: &mut EventSubsystem,
+        settings: WindowSettings) -> Result<Self, String> {
+        use sdl2::video::{ GLProfile };
+
         let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
         let (major, minor) = opengl.get_major_minor();
 
         // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
-        gl_attr::set_red_size(8);
-        gl_attr::set_green_size(8);
-        gl_attr::set_blue_size(8);
-        gl_attr::set_alpha_size(8);
-        gl_attr::set_stencil_size(8);
-        gl_attr::set_context_version(major as u8, minor as u8);
+
+        let gl_attr = video.gl_attr();
+
+        gl_attr.set_red_size(8);
+        gl_attr.set_green_size(8);
+        gl_attr.set_blue_size(8);
+        gl_attr.set_alpha_size(8);
+        gl_attr.set_stencil_size(8);
+        gl_attr.set_context_version(major as u8, minor as u8);
 
         if opengl >= OpenGL::V3_2 {
-            gl_attr::set_context_profile(GLProfile::Core);
+            gl_attr.set_context_profile(GLProfile::Core);
         }
         if settings.get_samples() != 0 {
-            gl_attr::set_multisample_buffers(1);
-            gl_attr::set_multisample_samples(settings.get_samples());
+            gl_attr.set_multisample_buffers(1);
+            gl_attr.set_multisample_samples(settings.get_samples());
         }
 
-        let mut window_builder = sdl_context.window(
+        let mut window_builder = video.window(
             &settings.get_title(),
             settings.get_size().width as u32,
             settings.get_size().height as u32
@@ -88,8 +116,8 @@ impl Sdl2Window {
             Err(_) =>
                 if settings.get_samples() != 0 {
                     // Retry without requiring anti-aliasing.
-                    gl_attr::set_multisample_buffers(0);
-                    gl_attr::set_multisample_samples(0);
+                    gl_attr.set_multisample_buffers(0);
+                    gl_attr.set_multisample_samples(0);
                     window_builder.build().unwrap()
                 } else {
                     window.unwrap() // Panic.
@@ -97,17 +125,21 @@ impl Sdl2Window {
         };
 
         // Send text input events.
-        sdl2::keyboard::start_text_input();
+        let text_input_util = video.text_input();
+        text_input_util.start();
 
         let context = window.gl_create_context().unwrap();
 
         // Load the OpenGL function pointers.
-        gl::load_with(sdl2::video::gl_get_proc_address);
+        let video_subsystem_clone = video.clone();
+        gl::load_with(move |a| {
+            video_subsystem_clone.gl_get_proc_address(a)
+        });
 
         if settings.get_vsync() {
-            sdl2::video::gl_set_swap_interval(1);
+            video.gl_set_swap_interval(1);
         } else {
-            sdl2::video::gl_set_swap_interval(0);
+            video.gl_set_swap_interval(0);
         }
 
         let mut window = Sdl2Window {
@@ -115,42 +147,48 @@ impl Sdl2Window {
             should_close: false,
             window: window,
             context: context,
-            sdl_context: sdl_context,
+            video_subsystem: video.clone(),
+            event_subsystem: event.clone(),
             mouse_relative: None,
             title: settings.get_title() ,
             size: settings.get_size(),
             draw_size: settings.get_size(),
         };
         window.update_draw_size();
-        window
+        Ok(window)
     }
 
     fn update_draw_size(&mut self) {
-        let properties = self.window.properties(&self.sdl_context);
-        let (w, h) = properties.get_drawable_size();
+        let (w, h) = self.window.get_drawable_size();
         self.draw_size = Size { width: w as u32, height: h as u32 };
     }
 
-    fn poll_event(&mut self) -> Option<Input> {
+    fn poll_event(&mut self) -> Result<Option<Input>, String> {
         // First check for a pending relative mouse move event.
         if let Some((x, y)) = self.mouse_relative {
             self.mouse_relative = None;
-            return Some(Input::Move(Motion::MouseRelative(x, y)));
+            return Ok(Some(Input::Move(Motion::MouseRelative(x, y))));
         }
 
         // Even though we create a new EventPump each time we poll an event
         // this should not be a problem since it only contains phantom data
         // and therefore should actually not have any overhead.
-        let event = match self.sdl_context.event_pump().poll_event() {
+        let sdl = self.video_subsystem.sdl();
+        let mut event_pump = match sdl.event_pump() {
+            Ok(e) => e,
+            Err(s) => return Err(s)
+        };
+
+        let event = match event_pump.poll_event() {
             Some( ev ) => ev,
-            None => return None
+            None => return Ok(None)
         };
         match event {
             sdl2::event::Event::Quit{..} => {
                 self.should_close = true;
             }
             sdl2::event::Event::TextInput { text, .. } => {
-                return Some(Input::Text(text));
+                return Ok(Some(Input::Text(text)));
             }
             sdl2::event::Event::KeyDown { keycode: Some(key), repeat, ..} => {
                 // SDL2 repeats the key down event.
@@ -163,51 +201,45 @@ impl Sdl2Window {
                 && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
+                    return Ok(Some(Input::Press(Button::Keyboard(sdl2_map_key(key)))));
                 }
             }
             sdl2::event::Event::KeyUp { keycode: Some(key), repeat, .. } => {
                 if repeat {
                     return self.poll_event()
                 }
-                return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
+                return Ok(Some(Input::Release(Button::Keyboard(sdl2_map_key(key)))));
             }
             sdl2::event::Event::MouseButtonDown { mouse_btn: button, .. } => {
-                return Some(Input::Press(Button::Mouse(sdl2_map_mouse(button))));
+                return Ok(Some(Input::Press(Button::Mouse(sdl2_map_mouse(button)))));
             }
             sdl2::event::Event::MouseButtonUp { mouse_btn: button, .. } => {
-                return Some(Input::Release(Button::Mouse(sdl2_map_mouse(button))));
+                return Ok(Some(Input::Release(Button::Mouse(sdl2_map_mouse(button)))));
             }
             sdl2::event::Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
-                return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
+                return Ok(Some(Input::Move(Motion::MouseCursor(x as f64, y as f64))));
             },
             sdl2::event::Event::MouseWheel { x, y, .. } => {
-                return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
+                return Ok(Some(Input::Move(Motion::MouseScroll(x as f64, y as f64))));
             }
             sdl2::event::Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 self.size.width = w as u32;
                 self.size.height = h as u32;
                 self.update_draw_size();
-                return Some(Input::Resize(w as u32, h as u32));
+                return Ok(Some(Input::Resize(w as u32, h as u32)));
             }
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusGained, .. } => {
-                return Some(Input::Focus(true));
+                return Ok(Some(Input::Focus(true)));
             }
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusLost, .. } => {
-                return Some(Input::Focus(false));
+                return Ok(Some(Input::Focus(false)));
             }
             _ => {}
         }
-        None
-    }
-}
-
-impl From<WindowSettings> for Sdl2Window {
-    fn from(settings: WindowSettings) -> Sdl2Window {
-        Sdl2Window::new(settings)
+        Ok(None)
     }
 }
 
@@ -223,7 +255,7 @@ impl Window for Sdl2Window {
     fn should_close(&self) -> bool { self.should_close }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
     fn size(&self) -> Size { self.size }
-    fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
+    fn poll_event(&mut self) -> Option<Input> { self.poll_event().unwrap_or(None) }
     fn draw_size(&self) -> Size { self.draw_size }
 }
 
@@ -232,19 +264,21 @@ impl AdvancedWindow for Sdl2Window {
         self.title.clone()
     }
     fn set_title(&mut self, value: String) {
-        let _ = self.window.properties(&self.sdl_context).set_title(&value);
+        let _ = self.window.set_title(&value);
         self.title = value
     }
     fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
     fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
     fn set_capture_cursor(&mut self, value: bool) {
-        sdl2::mouse::set_relative_mouse_mode(value);
+        let sdl = self.video_subsystem.sdl();
+        let mouse_util = sdl.mouse();
+        mouse_util.set_relative_mouse_mode(value);
     }
 }
 
 impl OpenGLWindow for Sdl2Window {
     fn get_proc_address(&mut self, proc_name: &str) -> ProcAddress {
-        sdl2::video::gl_get_proc_address(proc_name)
+        self.video_subsystem.gl_get_proc_address(proc_name)
     }
 
     fn is_current(&self) -> bool {
