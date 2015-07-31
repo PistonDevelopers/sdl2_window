@@ -221,6 +221,7 @@ impl Window for Sdl2Window {
     type Event = Input;
 
     fn should_close(&self) -> bool { self.should_close }
+    fn set_should_close(&mut self, value: bool) { self.should_close = value; }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
     fn size(&self) -> Size { self.size }
     fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
