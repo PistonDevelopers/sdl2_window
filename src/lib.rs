@@ -113,14 +113,17 @@ impl Sdl2Window {
 
         let window = match window {
             Ok(w) => w,
-            Err(_) =>
+            Err(e) =>
                 if settings.get_samples() != 0 {
                     // Retry without requiring anti-aliasing.
                     gl_attr.set_multisample_buffers(0);
                     gl_attr.set_multisample_samples(0);
-                    window_builder.build().unwrap()
+                    match window_builder.build() {
+                        Ok(w) => w,
+                        Err(e) => return Err(e)
+                    }
                 } else {
-                    window.unwrap() // Panic.
+                    return Err(e);
                 }
         };
 
@@ -128,7 +131,7 @@ impl Sdl2Window {
         let text_input_util = video.text_input();
         text_input_util.start();
 
-        let context = window.gl_create_context().unwrap();
+        let context = try!(window.gl_create_context());
 
         // Load the OpenGL function pointers.
         gl::load_with(|a| {
