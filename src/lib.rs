@@ -131,9 +131,8 @@ impl Sdl2Window {
         let context = window.gl_create_context().unwrap();
 
         // Load the OpenGL function pointers.
-        let video_subsystem_clone = video.clone();
-        gl::load_with(move |a| {
-            video_subsystem_clone.gl_get_proc_address(a)
+        gl::load_with(|a| {
+            video.gl_get_proc_address(a)
         });
 
         if settings.get_vsync() {
