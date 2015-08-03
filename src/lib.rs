@@ -7,7 +7,6 @@ extern crate window;
 extern crate input;
 extern crate shader_version;
 extern crate gl;
-extern crate num;
 
 // External crates.
 use window::{
@@ -32,6 +31,8 @@ pub struct Sdl2Window {
     pub context: sdl2::video::GLContext,
     /// SDL context.
     pub sdl_context: sdl2::Sdl,
+    /// Video subsystem.
+    pub video_subsystem: sdl2::VideoSubsystem,
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
@@ -43,29 +44,35 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2.
     pub fn new(settings: WindowSettings) -> Self {
-        use sdl2::video::{ GLProfile, gl_attr };
+        use sdl2::video::GLProfile;
 
-        let sdl_context = sdl2::init().everything().unwrap();
+        let sdl_context = sdl2::init().unwrap();
         let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
         let (major, minor) = opengl.get_major_minor();
 
-        // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
-        gl_attr::set_red_size(8);
-        gl_attr::set_green_size(8);
-        gl_attr::set_blue_size(8);
-        gl_attr::set_alpha_size(8);
-        gl_attr::set_stencil_size(8);
-        gl_attr::set_context_version(major as u8, minor as u8);
+        let video_subsystem = sdl_context.video().unwrap();
+        {
+            let gl_attr = video_subsystem.gl_attr();
+
+            // Not all drivers default to 32bit color, so explicitly set it to 32bit color.
+            gl_attr.set_red_size(8);
+            gl_attr.set_green_size(8);
+            gl_attr.set_blue_size(8);
+            gl_attr.set_alpha_size(8);
+            gl_attr.set_stencil_size(8);
+            gl_attr.set_context_version(major as u8, minor as u8);
+        }
 
         if opengl >= OpenGL::V3_2 {
-            gl_attr::set_context_profile(GLProfile::Core);
+            video_subsystem.gl_attr().set_context_profile(GLProfile::Core);
         }
         if settings.get_samples() != 0 {
-            gl_attr::set_multisample_buffers(1);
-            gl_attr::set_multisample_samples(settings.get_samples());
+            let gl_attr = video_subsystem.gl_attr();
+            gl_attr.set_multisample_buffers(1);
+            gl_attr.set_multisample_samples(settings.get_samples());
         }
 
-        let mut window_builder = sdl_context.window(
+        let mut window_builder = video_subsystem.window(
             &settings.get_title(),
             settings.get_size().width as u32,
             settings.get_size().height as u32
@@ -88,8 +95,9 @@ impl Sdl2Window {
             Err(_) =>
                 if settings.get_samples() != 0 {
                     // Retry without requiring anti-aliasing.
-                    gl_attr::set_multisample_buffers(0);
-                    gl_attr::set_multisample_samples(0);
+                    let gl_attr = video_subsystem.gl_attr();
+                    gl_attr.set_multisample_buffers(0);
+                    gl_attr.set_multisample_samples(0);
                     window_builder.build().unwrap()
                 } else {
                     window.unwrap() // Panic.
@@ -97,17 +105,17 @@ impl Sdl2Window {
         };
 
         // Send text input events.
-        sdl2::keyboard::start_text_input();
+        video_subsystem.text_input().start();
 
         let context = window.gl_create_context().unwrap();
 
         // Load the OpenGL function pointers.
-        gl::load_with(sdl2::video::gl_get_proc_address);
+        gl::load_with(|name| video_subsystem.gl_get_proc_address(name));
 
         if settings.get_vsync() {
-            sdl2::video::gl_set_swap_interval(1);
+            video_subsystem.gl_set_swap_interval(1);
         } else {
-            sdl2::video::gl_set_swap_interval(0);
+            video_subsystem.gl_set_swap_interval(0);
         }
 
         let mut window = Sdl2Window {
@@ -116,6 +124,7 @@ impl Sdl2Window {
             window: window,
             context: context,
             sdl_context: sdl_context,
+            video_subsystem: video_subsystem,
             mouse_relative: None,
             title: settings.get_title() ,
             size: settings.get_size(),
@@ -126,8 +135,7 @@ impl Sdl2Window {
     }
 
     fn update_draw_size(&mut self) {
-        let properties = self.window.properties(&self.sdl_context);
-        let (w, h) = properties.get_drawable_size();
+        let (w, h) = self.window.get_drawable_size();
         self.draw_size = Size { width: w as u32, height: h as u32 };
     }
 
@@ -141,7 +149,7 @@ impl Sdl2Window {
         // Even though we create a new EventPump each time we poll an event
         // this should not be a problem since it only contains phantom data
         // and therefore should actually not have any overhead.
-        let event = match self.sdl_context.event_pump().poll_event() {
+        let event = match self.sdl_context.event_pump().unwrap().poll_event() {
             Some( ev ) => ev,
             None => return None
         };
@@ -233,19 +241,19 @@ impl AdvancedWindow for Sdl2Window {
         self.title.clone()
     }
     fn set_title(&mut self, value: String) {
-        let _ = self.window.properties(&self.sdl_context).set_title(&value);
+        let _ = self.window.set_title(&value);
         self.title = value
     }
     fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
     fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
     fn set_capture_cursor(&mut self, value: bool) {
-        sdl2::mouse::set_relative_mouse_mode(value);
+        self.sdl_context.mouse().set_relative_mouse_mode(value);
     }
 }
 
 impl OpenGLWindow for Sdl2Window {
     fn get_proc_address(&mut self, proc_name: &str) -> ProcAddress {
-        sdl2::video::gl_get_proc_address(proc_name)
+        self.video_subsystem.gl_get_proc_address(proc_name)
     }
 
     fn is_current(&self) -> bool {
@@ -259,7 +267,7 @@ impl OpenGLWindow for Sdl2Window {
 
 /// Maps a SDL2 key to piston-input key.
 pub fn sdl2_map_key(keycode: sdl2::keyboard::Keycode) -> keyboard::Key {
-    num::FromPrimitive::from_u64(keycode as u64).unwrap()
+    (keycode as u32).into()
 }
 
 /// Maps a SDL2 mouse button to piston-input button.
