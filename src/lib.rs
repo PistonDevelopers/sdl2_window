@@ -44,14 +44,14 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
     /// You can retrieve both via the public fields on the `Sdl2Window` struct.
-    pub fn new(settings: WindowSettings) -> Self {
-        let sdl = sdl2::init().unwrap();
-        let video_subsystem = sdl.video().unwrap();
+    pub fn new(settings: WindowSettings) -> Result<Self, String> {
+        let sdl = try!(sdl2::init());
+        let video_subsystem = try!(sdl.video());
         Self::with_subsystem(video_subsystem, settings)
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
-    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: WindowSettings) -> Self {
+    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: WindowSettings) -> Result<Self, String> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
@@ -106,16 +106,16 @@ impl Sdl2Window {
                     let gl_attr = video_subsystem.gl_attr();
                     gl_attr.set_multisample_buffers(0);
                     gl_attr.set_multisample_samples(0);
-                    window_builder.build().unwrap()
+                    try!(window_builder.build())
                 } else {
-                    window.unwrap() // Panic.
+                    try!(window)
                 }
         };
 
         // Send text input events.
         video_subsystem.text_input().start();
 
-        let context = window.gl_create_context().unwrap();
+        let context = try!(window.gl_create_context());
 
         // Load the OpenGL function pointers.
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name));
@@ -139,7 +139,7 @@ impl Sdl2Window {
             draw_size: settings.get_size(),
         };
         window.update_draw_size();
-        window
+        Ok(window)
     }
 
     fn update_draw_size(&mut self) {
@@ -218,12 +218,6 @@ impl Sdl2Window {
             _ => {}
         }
         None
-    }
-}
-
-impl From<WindowSettings> for Sdl2Window {
-    fn from(settings: WindowSettings) -> Sdl2Window {
-        Sdl2Window::new(settings)
     }
 }
 
