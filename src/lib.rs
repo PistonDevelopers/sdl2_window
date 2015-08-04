@@ -42,15 +42,23 @@ pub struct Sdl2Window {
 }
 
 impl Sdl2Window {
-    /// Creates a new game window for SDL2.
+    /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
+    /// You can retrieve both via the public fields on the `Sdl2Window` struct.
     pub fn new(settings: WindowSettings) -> Self {
+        let sdl = sdl2::init().unwrap();
+        let video_subsystem = sdl.video().unwrap();
+        Self::with_subsystem(video_subsystem, settings)
+    }
+
+    /// Creates a window with the supplied SDL Video subsystem.
+    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: WindowSettings) -> Self {
         use sdl2::video::GLProfile;
 
-        let sdl_context = sdl2::init().unwrap();
+        let sdl_context = video_subsystem.sdl();
+
         let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
         let (major, minor) = opengl.get_major_minor();
 
-        let video_subsystem = sdl_context.video().unwrap();
         {
             let gl_attr = video_subsystem.gl_attr();
 
