@@ -10,6 +10,7 @@ extern crate gl;
 
 // External crates.
 use window::{
+    BuildFromWindowSettings,
     OpenGLWindow,
     ProcAddress,
     Window,
@@ -218,6 +219,13 @@ impl Sdl2Window {
             _ => {}
         }
         None
+    }
+}
+
+impl BuildFromWindowSettings for Sdl2Window {
+    fn build_from_window_settings(settings: WindowSettings)
+    -> Result<Self, String> {
+        Sdl2Window::new(settings)
     }
 }
 
