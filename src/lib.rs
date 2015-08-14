@@ -218,6 +218,12 @@ impl Sdl2Window {
             sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusLost, .. } => {
                 return Some(Input::Focus(false));
             }
+            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::Enter, .. } => {
+                return Some(Input::Cursor(true));
+            }
+            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::Leave, .. } => {
+                return Some(Input::Cursor(false));
+            }
             _ => {}
         }
         None
