@@ -46,8 +46,9 @@ impl Sdl2Window {
     /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
     /// You can retrieve both via the public fields on the `Sdl2Window` struct.
     pub fn new(settings: WindowSettings) -> Result<Self, String> {
-        let sdl = try!(sdl2::init());
-        let video_subsystem = try!(sdl.video());
+        let sdl = try!(sdl2::init().map_err(|e| format!("{}", e)));
+        let video_subsystem = try!(sdl.video()
+            .map_err(|e| format!("{}", e)));
         Self::with_subsystem(video_subsystem, settings)
     }
 
@@ -107,16 +108,17 @@ impl Sdl2Window {
                     let gl_attr = video_subsystem.gl_attr();
                     gl_attr.set_multisample_buffers(0);
                     gl_attr.set_multisample_samples(0);
-                    try!(window_builder.build())
+                    try!(window_builder.build().map_err(|e| format!("{}", e)))
                 } else {
-                    try!(window)
+                    try!(window.map_err(|e| format!("{}", e)))
                 }
         };
 
         // Send text input events.
         video_subsystem.text_input().start();
 
-        let context = try!(window.gl_create_context());
+        let context = try!(window.gl_create_context()
+            .map_err(|e| format!("{}", e)));
 
         // Load the OpenGL function pointers.
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name));
@@ -144,7 +146,7 @@ impl Sdl2Window {
     }
 
     fn update_draw_size(&mut self) {
-        let (w, h) = self.window.get_drawable_size();
+        let (w, h) = self.window.drawable_size();
         self.draw_size = Size { width: w as u32, height: h as u32 };
     }
 
