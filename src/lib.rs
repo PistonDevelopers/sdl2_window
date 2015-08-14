@@ -151,6 +151,8 @@ impl Sdl2Window {
     }
 
     fn poll_event(&mut self) -> Option<Input> {
+        use sdl2::event::{ Event, WindowEventId };
+
         // First check for a pending relative mouse move event.
         if let Some((x, y)) = self.mouse_relative {
             self.mouse_relative = None;
@@ -165,13 +167,13 @@ impl Sdl2Window {
             None => return None
         };
         match event {
-            sdl2::event::Event::Quit{..} => {
+            Event::Quit{..} => {
                 self.should_close = true;
             }
-            sdl2::event::Event::TextInput { text, .. } => {
+            Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
             }
-            sdl2::event::Event::KeyDown { keycode: Some(key), repeat, ..} => {
+            Event::KeyDown { keycode: Some(key), repeat, ..} => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
@@ -185,43 +187,43 @@ impl Sdl2Window {
                     return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
                 }
             }
-            sdl2::event::Event::KeyUp { keycode: Some(key), repeat, .. } => {
+            Event::KeyUp { keycode: Some(key), repeat, .. } => {
                 if repeat {
                     return self.poll_event()
                 }
                 return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
             }
-            sdl2::event::Event::MouseButtonDown { mouse_btn: button, .. } => {
+            Event::MouseButtonDown { mouse_btn: button, .. } => {
                 return Some(Input::Press(Button::Mouse(sdl2_map_mouse(button))));
             }
-            sdl2::event::Event::MouseButtonUp { mouse_btn: button, .. } => {
+            Event::MouseButtonUp { mouse_btn: button, .. } => {
                 return Some(Input::Release(Button::Mouse(sdl2_map_mouse(button))));
             }
-            sdl2::event::Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
+            Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
                 return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
             },
-            sdl2::event::Event::MouseWheel { x, y, .. } => {
+            Event::MouseWheel { x, y, .. } => {
                 return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
-            sdl2::event::Event::Window {
+            Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 self.size.width = w as u32;
                 self.size.height = h as u32;
                 self.update_draw_size();
                 return Some(Input::Resize(w as u32, h as u32));
             }
-            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusGained, .. } => {
+            Event::Window { win_event_id: WindowEventId::FocusGained, .. } => {
                 return Some(Input::Focus(true));
             }
-            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::FocusLost, .. } => {
+            Event::Window { win_event_id: WindowEventId::FocusLost, .. } => {
                 return Some(Input::Focus(false));
             }
-            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::Enter, .. } => {
+            Event::Window { win_event_id: WindowEventId::Enter, .. } => {
                 return Some(Input::Cursor(true));
             }
-            sdl2::event::Event::Window { win_event_id: sdl2::event::WindowEventId::Leave, .. } => {
+            Event::Window { win_event_id: WindowEventId::Leave, .. } => {
                 return Some(Input::Cursor(false));
             }
             _ => {}
