@@ -1,5 +1,4 @@
 #![deny(missing_docs)]
-
 //! A SDL2 window back-end for the Piston game engine.
 
 extern crate sdl2;
@@ -18,9 +17,25 @@ use window::{
     WindowSettings,
     Size,
 };
-use input::{ keyboard, Button, MouseButton, Input, Motion };
+use input::{ keyboard, Button, MouseButton, Input, Motion, JoystickAxisArgs, JoystickButton };
+
+use std::vec::Vec;
 
 pub use shader_version::OpenGL;
+
+struct JoystickState {
+    joysticks: Vec<sdl2::joystick::Joystick>,
+    subsystem: sdl2::JoystickSubsystem,
+}
+
+impl JoystickState {
+    fn new(subsystem: sdl2::JoystickSubsystem) -> Self {
+        JoystickState {
+            joysticks: Vec::new(),
+            subsystem: subsystem,
+        }
+    }
+}
 
 /// A widow implemented by SDL2 back-end.
 pub struct Sdl2Window {
@@ -34,6 +49,7 @@ pub struct Sdl2Window {
     pub sdl_context: sdl2::Sdl,
     /// Video subsystem.
     pub video_subsystem: sdl2::VideoSubsystem,
+    joystick_state: Option<JoystickState>,
     should_close: bool,
     mouse_relative: Option<(f64, f64)>,
     exit_on_esc: bool,
@@ -57,7 +73,6 @@ impl Sdl2Window {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
-
         let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
         let (major, minor) = opengl.get_major_minor();
 
@@ -136,6 +151,7 @@ impl Sdl2Window {
             context: context,
             sdl_context: sdl_context,
             video_subsystem: video_subsystem,
+            joystick_state: None,
             mouse_relative: None,
             title: settings.get_title() ,
             size: settings.get_size(),
@@ -143,6 +159,26 @@ impl Sdl2Window {
         };
         window.update_draw_size();
         Ok(window)
+    }
+
+    /// Initialize the joystick subsystem. Required before joystick input
+    /// events will be returned. Returns the number available or error.
+    pub fn init_joysticks(&mut self) -> Result<u32, String> {
+        let subsystem = try!(self.sdl_context.joystick().map_err(|e| format!("{}", e)));
+        let mut state = JoystickState::new(subsystem);
+        let available = try!(state.subsystem.num_joysticks().map_err(|e| format!("{}", e)));
+
+        // Open all the joysticks
+        for id in 0..available {
+            match state.subsystem.open(id) {
+                Ok(c) => { state.joysticks.push(c) },
+                Err(e) => return Err(format!("{}", e)),
+            }
+        }
+
+        self.joystick_state = Some(state);
+
+        Ok(available)
     }
 
     fn update_draw_size(&mut self) {
@@ -207,6 +243,19 @@ impl Sdl2Window {
             Event::MouseWheel { x, y, .. } => {
                 return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
+            Event::JoyAxisMotion{ which, axis_idx, value: val, .. } => {
+                // Axis motion is an absolute value in the range
+                // [-32768, 32767]. Normalize it down to a float.
+                use std::i16::MAX;
+                let normalized_value = val as f64 / MAX as f64;
+                return Some(Input::Move(Motion::JoystickAxis(JoystickAxisArgs::new(which, axis_idx, normalized_value))));
+            }
+            Event::JoyButtonDown{ which, button_idx, .. } => {
+                return Some(Input::Press(Button::Joystick(JoystickButton::new(which, button_idx))))
+            },
+            Event::JoyButtonUp{ which, button_idx, .. } => {
+                return Some(Input::Release(Button::Joystick(JoystickButton::new(which, button_idx))))
+            },
             Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 self.size.width = w as u32;
