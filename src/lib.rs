@@ -65,7 +65,10 @@ impl Sdl2Window {
         let sdl = try!(sdl2::init().map_err(|e| format!("{}", e)));
         let video_subsystem = try!(sdl.video()
             .map_err(|e| format!("{}", e)));
-        Self::with_subsystem(video_subsystem, settings)
+        let mut window = try!(Self::with_subsystem(video_subsystem, settings));
+        // Enable joysticks by default.
+        try!(window.init_joysticks().map_err(|e| e));
+        Ok(window)
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
