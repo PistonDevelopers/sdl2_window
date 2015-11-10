@@ -139,7 +139,7 @@ impl Sdl2Window {
             .map_err(|e| format!("{}", e)));
 
         // Load the OpenGL function pointers.
-        gl::load_with(|name| video_subsystem.gl_get_proc_address(name));
+        gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
         if settings.get_vsync() {
             video_subsystem.gl_set_swap_interval(1);
@@ -325,7 +325,7 @@ impl AdvancedWindow for Sdl2Window {
 
 impl OpenGLWindow for Sdl2Window {
     fn get_proc_address(&mut self, proc_name: &str) -> ProcAddress {
-        self.video_subsystem.gl_get_proc_address(proc_name)
+        self.video_subsystem.gl_get_proc_address(proc_name) as *const _
     }
 
     fn is_current(&self) -> bool {
