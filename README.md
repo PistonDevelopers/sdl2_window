@@ -1,8 +1,8 @@
-# sdl2_window [![Build Status](https://travis-ci.org/PistonDevelopers/sdl2_window.svg?branch=master)](https://travis-ci.org/PistonDevelopers/sdl2_window)
+# sdl2_window [![Build Status](https://travis-ci.org/PistonDevelopers/sdl2_window.svg?branch=master)](https://travis-ci.org/PistonDevelopers/sdl2_window) [![Crates.io](https://img.shields.io/crates/v/pistoncore-sdl2_window.svg)](https://crates.io/crates/pistoncore-sdl2_window) [![Crates.io](https://img.shields.io/crates/l/pistoncore-sdl2_window.svg)](https://github.com/PistonDevelopers/sdl2_window/blob/master/LICENSE)
 
 An SDL2 back-end for the Piston game engine
 
-Maintainers: @TyOverby, @bvssvni, @Coeuvre
+Maintainers: @TyOverby, @bvssvni, @Coeuvre, @mitchmindtree
 
 [How to contribute](https://github.com/PistonDevelopers/piston/blob/master/CONTRIBUTING.md)
 
