@@ -1,7 +1,7 @@
 [package]
 
 name = "pistoncore-sdl2_window"
-version = "0.20.0"
+version = "0.21.0"
 authors = [
     "bvssvni <bvssvni@gmail.com>",
     "Coeuvre <coeuvre@gmail.com>",
@@ -30,4 +30,4 @@ sdl2 = "0.11.0"
 pistoncore-window = "0.14.0"
 pistoncore-input = "0.8.0"
 shader_version = "0.2.0"
-gl = "0.3.0"
+gl = "0.4.0"
