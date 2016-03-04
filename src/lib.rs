@@ -89,6 +89,7 @@ impl Sdl2Window {
             gl_attr.set_alpha_size(8);
             gl_attr.set_stencil_size(8);
             gl_attr.set_context_version(major as u8, minor as u8);
+            gl_attr.set_framebuffer_srgb_compatible(settings.get_srgb());
         }
 
         if opengl >= OpenGL::V3_2 {
