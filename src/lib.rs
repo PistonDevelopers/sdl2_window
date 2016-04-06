@@ -17,7 +17,15 @@ use window::{
     WindowSettings,
     Size,
 };
-use input::{ keyboard, Button, MouseButton, Input, Motion, JoystickAxisArgs, JoystickButton };
+use input::{
+    keyboard,
+    Button,
+    MouseButton,
+    Input,
+    Motion,
+    ControllerAxisArgs,
+    ControllerButton
+};
 
 use std::vec::Vec;
 
@@ -252,13 +260,13 @@ impl Sdl2Window {
                 // [-32768, 32767]. Normalize it down to a float.
                 use std::i16::MAX;
                 let normalized_value = val as f64 / MAX as f64;
-                return Some(Input::Move(Motion::JoystickAxis(JoystickAxisArgs::new(which, axis_idx, normalized_value))));
+                return Some(Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(which, axis_idx, normalized_value))));
             }
             Event::JoyButtonDown{ which, button_idx, .. } => {
-                return Some(Input::Press(Button::Joystick(JoystickButton::new(which, button_idx))))
+                return Some(Input::Press(Button::Controller(ControllerButton::new(which, button_idx))))
             },
             Event::JoyButtonUp{ which, button_idx, .. } => {
-                return Some(Input::Release(Button::Joystick(JoystickButton::new(which, button_idx))))
+                return Some(Input::Release(Button::Controller(ControllerButton::new(which, button_idx))))
             },
             Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
