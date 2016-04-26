@@ -45,7 +45,7 @@ impl JoystickState {
     }
 }
 
-/// A widow implemented by SDL2 back-end.
+/// A window implemented by SDL2 back-end.
 pub struct Sdl2Window {
     /// SDL window handle.
     pub window: sdl2::video::Window,
