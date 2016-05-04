@@ -24,7 +24,9 @@ use input::{
     Input,
     Motion,
     ControllerAxisArgs,
-    ControllerButton
+    ControllerButton,
+    Touch,
+    TouchArgs,
 };
 
 use std::vec::Vec;
@@ -251,7 +253,7 @@ impl Sdl2Window {
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
                 return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
-            },
+            }
             Event::MouseWheel { x, y, .. } => {
                 return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
@@ -260,14 +262,29 @@ impl Sdl2Window {
                 // [-32768, 32767]. Normalize it down to a float.
                 use std::i16::MAX;
                 let normalized_value = val as f64 / MAX as f64;
-                return Some(Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(which, axis_idx, normalized_value))));
+                return Some(Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
+                    which, axis_idx, normalized_value))));
             }
             Event::JoyButtonDown{ which, button_idx, .. } => {
-                return Some(Input::Press(Button::Controller(ControllerButton::new(which, button_idx))))
-            },
+                return Some(Input::Press(Button::Controller(ControllerButton::new(
+                    which, button_idx))))
+            }
             Event::JoyButtonUp{ which, button_idx, .. } => {
-                return Some(Input::Release(Button::Controller(ControllerButton::new(which, button_idx))))
-            },
+                return Some(Input::Release(Button::Controller(ControllerButton::new(
+                    which, button_idx))))
+            }
+            Event::FingerDown { touch_id, finger_id, x, y, pressure, .. } => {
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(
+                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::Start))))
+            }
+            Event::FingerMotion { touch_id, finger_id, x, y, pressure, .. } => {
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(
+                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::Move))))
+            }
+            Event::FingerUp { touch_id, finger_id, x, y, pressure, .. } => {
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(
+                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::End))))
+            }
             Event::Window {
                 win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
                 self.size.width = w as u32;
