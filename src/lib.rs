@@ -61,7 +61,13 @@ pub struct Sdl2Window {
     pub video_subsystem: sdl2::VideoSubsystem,
     joystick_state: Option<JoystickState>,
     should_close: bool,
+    // Stores relative coordinates to emit on next poll.
     mouse_relative: Option<(f64, f64)>,
+    // Whether the cursor is captured.
+    is_capturing_cursor: bool,
+    // Used to ignore relative events when warping mouse
+    // to center of window.
+    ignore_relative_event: Option<(i32, i32)>,
     exit_on_esc: bool,
     title: String,
     size: Size,
@@ -161,6 +167,8 @@ impl Sdl2Window {
         let mut window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
+            is_capturing_cursor: false,
+            ignore_relative_event: None,
             window: window,
             context: context,
             sdl_context: sdl_context,
@@ -213,8 +221,26 @@ impl Sdl2Window {
         // this should not be a problem since it only contains phantom data
         // and therefore should actually not have any overhead.
         let event = match self.sdl_context.event_pump().unwrap().poll_event() {
-            Some( ev ) => ev,
-            None => return None
+            Some( ev ) => {
+                if let Event::MouseMotion { xrel, yrel, .. } = ev {
+                    // Ignore a specific mouse motion event caused by
+                    // change of coordinates when warping the cursor
+                    // to the center.
+                    if Some((xrel, yrel)) == self.ignore_relative_event {
+                        self.ignore_relative_event = None;
+                        return None;
+                    }
+                }
+                ev
+            }
+            None => {
+                // Wait until event queue is empty to reduce
+                // risk of error in order.
+                if self.is_capturing_cursor {
+                    self.fake_capture();
+                }
+                return None
+            }
         };
         match event {
             Event::Quit{..} => {
@@ -308,6 +334,21 @@ impl Sdl2Window {
         }
         None
     }
+
+    fn fake_capture(&mut self) {
+        // Fake capturing of cursor.
+        let cx = (self.size.width / 2) as i32;
+        let cy = (self.size.height / 2) as i32;
+        let s = self.sdl_context.mouse().mouse_state();
+        let dx = cx - s.1;
+        let dy = cy - s.2;
+        if dx != 0 && dy != 0 {
+            self.ignore_relative_event = Some((dx, dy));
+            self.sdl_context.mouse().warp_mouse_in_window(
+                &self.window, cx as i32, cy as i32
+            );
+        }
+    }
 }
 
 impl BuildFromWindowSettings for Sdl2Window {
@@ -345,7 +386,17 @@ impl AdvancedWindow for Sdl2Window {
     fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
     fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
     fn set_capture_cursor(&mut self, value: bool) {
-        self.sdl_context.mouse().set_relative_mouse_mode(value);
+        // Normally it should call `.set_relative_mouse_mode(value)`,
+        // but since it does not emit relative mouse events,
+        // we have to fake it by hiding the cursor and warping it
+        // back to the center of the window.
+        self.is_capturing_cursor = value;
+        self.sdl_context.mouse().show_cursor(!value);
+        if value {
+            // Move cursor to center of window now,
+            // to get right relative mouse motion to ignore.
+            self.fake_capture();
+        }
     }
 }
 
