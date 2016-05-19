@@ -276,6 +276,10 @@ impl Sdl2Window {
                 return Some(Input::Release(Button::Mouse(sdl2_map_mouse(button))));
             }
             Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
+                if self.is_capturing_cursor {
+                    // Skip normal mouse movement and emit relative motion only.
+                    return Some(Input::Move(Motion::MouseRelative(dx as f64, dy as f64)));
+                }
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64));
                 return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
