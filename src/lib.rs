@@ -346,7 +346,7 @@ impl Sdl2Window {
         let s = self.sdl_context.mouse().mouse_state();
         let dx = cx - s.1;
         let dy = cy - s.2;
-        if dx != 0 && dy != 0 {
+        if dx != 0 || dy != 0 {
             self.ignore_relative_event = Some((dx, dy));
             self.sdl_context.mouse().warp_mouse_in_window(
                 &self.window, cx as i32, cy as i32
