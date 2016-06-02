@@ -16,6 +16,7 @@ use window::{
     AdvancedWindow,
     WindowSettings,
     Size,
+    Position,
 };
 use input::{
     keyboard,
@@ -77,7 +78,7 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
     /// You can retrieve both via the public fields on the `Sdl2Window` struct.
-    pub fn new(settings: WindowSettings) -> Result<Self, String> {
+    pub fn new(settings: &WindowSettings) -> Result<Self, String> {
         let sdl = try!(sdl2::init().map_err(|e| format!("{}", e)));
         let video_subsystem = try!(sdl.video()
             .map_err(|e| format!("{}", e)));
@@ -88,7 +89,7 @@ impl Sdl2Window {
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
-    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: WindowSettings) -> Result<Self, String> {
+    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: &WindowSettings) -> Result<Self, String> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
@@ -356,8 +357,7 @@ impl Sdl2Window {
 }
 
 impl BuildFromWindowSettings for Sdl2Window {
-    fn build_from_window_settings(settings: WindowSettings)
-    -> Result<Self, String> {
+    fn build_from_window_settings(settings: &WindowSettings) -> Result<Self, String> {
         Sdl2Window::new(settings)
     }
 }
@@ -401,6 +401,18 @@ impl AdvancedWindow for Sdl2Window {
             // to get right relative mouse motion to ignore.
             self.fake_capture();
         }
+    }
+    fn show(&mut self) { self.window.show(); }
+    fn hide(&mut self) { self.window.hide(); }
+    fn get_position(&self) -> Option<Position> {
+        let (x, y) = self.window.position();
+        Some(Position { x: x, y: y })
+    }
+    fn set_position<P: Into<Position>>(&mut self, pos: P) {
+        use sdl2::video::WindowPos;
+
+        let pos: Position = pos.into();
+        self.window.set_position(WindowPos::Positioned(pos.x), WindowPos::Positioned(pos.y));
     }
 }
 
