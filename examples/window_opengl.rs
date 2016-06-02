@@ -9,7 +9,7 @@ use window::WindowSettings;
 
 fn main() {
     let _ = Sdl2Window::new(
-        WindowSettings::new("SDL Window", (640, 480))
+        &WindowSettings::new("SDL Window", (640, 480))
             .fullscreen(false)
             .vsync(true)
             .opengl(OpenGL::V2_1) // etc
