@@ -83,8 +83,9 @@ impl Sdl2Window {
         let video_subsystem = try!(sdl.video()
             .map_err(|e| format!("{}", e)));
         let mut window = try!(Self::with_subsystem(video_subsystem, settings));
-        // Enable joysticks by default.
-        try!(window.init_joysticks().map_err(|e| e));
+        if settings.get_controllers() {
+            try!(window.init_joysticks().map_err(|e| e));
+        }
         Ok(window)
     }
 
@@ -125,8 +126,19 @@ impl Sdl2Window {
         );
 
         let window_builder = window_builder.position_centered()
-            .opengl()
-            .resizable();
+            .opengl();
+
+        let window_builder = if settings.get_resizable() {
+            window_builder.resizable()
+        } else {
+            window_builder
+        };
+
+        let window_builder = if settings.get_decorated() {
+            window_builder
+        } else {
+            window_builder.borderless()
+        };
 
         let window_builder = if settings.get_fullscreen() {
             window_builder.fullscreen()
