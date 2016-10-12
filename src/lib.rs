@@ -31,6 +31,7 @@ use input::{
 };
 
 use std::vec::Vec;
+use std::time::Duration;
 
 pub use shader_version::OpenGL;
 
@@ -221,19 +222,50 @@ impl Sdl2Window {
         self.draw_size = Size { width: w as u32, height: h as u32 };
     }
 
-    fn poll_event(&mut self) -> Option<Input> {
-        use sdl2::event::{ Event, WindowEventId };
+    fn wait_event(&mut self) -> Input {
+        if let Some(event) = self.check_pending_event() {
+            return event;
+        };
+        loop {
+            let sdl_event = self.sdl_context.event_pump().unwrap().wait_event();
+            if let Some(event) = self.handle_event(Some(sdl_event)) {
+                return event;
+            }
+        }
+    }
 
+    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> {
+        if let Some(event) = self.check_pending_event() {
+            return Some(event);
+        };
+        let timeout_ms = timeout.as_secs() as u32 * 1000 + (timeout.subsec_nanos() / 1_000_000);
+        let sdl_event = self.sdl_context.event_pump().unwrap().wait_event_timeout(timeout_ms);
+        self.handle_event(sdl_event)
+    }
+
+    fn poll_event(&mut self) -> Option<Input> {
+        if let Some(event) = self.check_pending_event() {
+            return Some(event);
+        };
+        // Even though we create a new EventPump each time we poll an event
+        // this should not be a problem since it only contains phantom data
+        // and therefore should actually not have any overhead.
+        let sdl_event = self.sdl_context.event_pump().unwrap().poll_event();
+        self.handle_event(sdl_event)
+    }
+
+    fn check_pending_event(&mut self) -> Option<Input> {
         // First check for a pending relative mouse move event.
         if let Some((x, y)) = self.mouse_relative {
             self.mouse_relative = None;
             return Some(Input::Move(Motion::MouseRelative(x, y)));
         }
+        None
+    }
 
-        // Even though we create a new EventPump each time we poll an event
-        // this should not be a problem since it only contains phantom data
-        // and therefore should actually not have any overhead.
-        let event = match self.sdl_context.event_pump().unwrap().poll_event() {
+    fn handle_event(&mut self, sdl_event: Option<sdl2::event::Event>) -> Option<Input> {
+        use sdl2::event::{ Event, WindowEventId };
+        let event = match sdl_event {
             Some( ev ) => {
                 if let Event::MouseMotion { xrel, yrel, .. } = ev {
                     // Ignore a specific mouse motion event caused by
@@ -387,6 +419,8 @@ impl Window for Sdl2Window {
     fn set_should_close(&mut self, value: bool) { self.should_close = value; }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
     fn size(&self) -> Size { self.size }
+    fn wait_event(&mut self) -> Input { self.wait_event() }
+    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> { self.wait_event_timeout(timeout) }
     fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
     fn draw_size(&self) -> Size { self.draw_size }
 }
