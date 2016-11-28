@@ -290,6 +290,7 @@ impl Sdl2Window {
         match event {
             Event::Quit{..} => {
                 self.should_close = true;
+                return Some(Input::Close);
             }
             Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
