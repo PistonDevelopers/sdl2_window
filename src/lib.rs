@@ -264,7 +264,7 @@ impl Sdl2Window {
     }
 
     fn handle_event(&mut self, sdl_event: Option<sdl2::event::Event>) -> Option<Input> {
-        use sdl2::event::{ Event, WindowEventId };
+        use sdl2::event::{ Event, WindowEvent };
         let event = match sdl_event {
             Some( ev ) => {
                 if let Event::MouseMotion { xrel, yrel, .. } = ev {
@@ -362,22 +362,22 @@ impl Sdl2Window {
                     touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::End))))
             }
             Event::Window {
-                win_event_id: sdl2::event::WindowEventId::Resized, data1: w, data2: h, .. } => {
+                win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
                 self.size.width = w as u32;
                 self.size.height = h as u32;
                 self.update_draw_size();
                 return Some(Input::Resize(w as u32, h as u32));
             }
-            Event::Window { win_event_id: WindowEventId::FocusGained, .. } => {
+            Event::Window { win_event: WindowEvent::FocusGained, .. } => {
                 return Some(Input::Focus(true));
             }
-            Event::Window { win_event_id: WindowEventId::FocusLost, .. } => {
+            Event::Window { win_event: WindowEvent::FocusLost, .. } => {
                 return Some(Input::Focus(false));
             }
-            Event::Window { win_event_id: WindowEventId::Enter, .. } => {
+            Event::Window { win_event: WindowEvent::Enter, .. } => {
                 return Some(Input::Cursor(true));
             }
-            Event::Window { win_event_id: WindowEventId::Leave, .. } => {
+            Event::Window { win_event: WindowEvent::Leave, .. } => {
                 return Some(Input::Cursor(false));
             }
             _ => {}
@@ -389,9 +389,9 @@ impl Sdl2Window {
         // Fake capturing of cursor.
         let cx = (self.size.width / 2) as i32;
         let cy = (self.size.height / 2) as i32;
-        let s = self.sdl_context.mouse().mouse_state();
-        let dx = cx - s.1;
-        let dy = cy - s.2;
+        let s = self.sdl_context.event_pump().unwrap().mouse_state();
+        let dx = cx - s.x();
+        let dy = cy - s.y();
         if dx != 0 || dy != 0 {
             self.ignore_relative_event = Some((dx, dy));
             self.sdl_context.mouse().warp_mouse_in_window(
@@ -483,13 +483,15 @@ pub fn sdl2_map_key(keycode: sdl2::keyboard::Keycode) -> keyboard::Key {
 }
 
 /// Maps a SDL2 mouse button to piston-input button.
-pub fn sdl2_map_mouse(button: sdl2::mouse::Mouse) -> MouseButton {
+pub fn sdl2_map_mouse(button: sdl2::mouse::MouseButton) -> MouseButton {
+    use sdl2::mouse::MouseButton as MB;
+
     match button {
-        sdl2::mouse::Mouse::Left => MouseButton::Left,
-        sdl2::mouse::Mouse::Right => MouseButton::Right,
-        sdl2::mouse::Mouse::Middle => MouseButton::Middle,
-        sdl2::mouse::Mouse::X1 => MouseButton::X1,
-        sdl2::mouse::Mouse::X2 => MouseButton::X2,
-        sdl2::mouse::Mouse::Unknown(_) => MouseButton::Unknown,
+        MB::Left => MouseButton::Left,
+        MB::Right => MouseButton::Right,
+        MB::Middle => MouseButton::Middle,
+        MB::X1 => MouseButton::X1,
+        MB::X2 => MouseButton::X2,
+        MB::Unknown => MouseButton::Unknown,
     }
 }
