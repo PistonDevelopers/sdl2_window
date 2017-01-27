@@ -24,6 +24,7 @@ use input::{
     MouseButton,
     Input,
     Motion,
+    CloseArgs,
     ControllerAxisArgs,
     ControllerButton,
     Touch,
@@ -290,7 +291,7 @@ impl Sdl2Window {
         match event {
             Event::Quit{..} => {
                 self.should_close = true;
-                return Some(Input::Close);
+                return Some(Input::Close(CloseArgs));
             }
             Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
@@ -414,8 +415,6 @@ impl Drop for Sdl2Window {
 }
 
 impl Window for Sdl2Window {
-    type Event = Input;
-
     fn should_close(&self) -> bool { self.should_close }
     fn set_should_close(&mut self, value: bool) { self.should_close = value; }
     fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
