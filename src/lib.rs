@@ -21,6 +21,8 @@ use window::{
 use input::{
     keyboard,
     Button,
+    ButtonArgs,
+    ButtonState,
     MouseButton,
     Input,
     Motion,
@@ -296,7 +298,7 @@ impl Sdl2Window {
             Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
             }
-            Event::KeyDown { keycode: Some(key), repeat, ..} => {
+            Event::KeyDown { keycode: Some(key), repeat, scancode, ..} => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
@@ -307,20 +309,36 @@ impl Sdl2Window {
                 && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(Input::Press(Button::Keyboard(sdl2_map_key(key))));
+                    return Some(Input::Button(ButtonArgs {
+                        state: ButtonState::Press,
+                        button: Button::Keyboard(sdl2_map_key(key)),
+                        scancode: scancode.map(|scode| scode as i32),
+                    }));
                 }
             }
-            Event::KeyUp { keycode: Some(key), repeat, .. } => {
+            Event::KeyUp { keycode: Some(key), repeat, scancode, .. } => {
                 if repeat {
                     return self.poll_event()
                 }
-                return Some(Input::Release(Button::Keyboard(sdl2_map_key(key))));
+                return Some(Input::Button(ButtonArgs {
+                    state: ButtonState::Release,
+                    button: Button::Keyboard(sdl2_map_key(key)),
+                    scancode: scancode.map(|scode| scode as i32),
+                }));
             }
             Event::MouseButtonDown { mouse_btn: button, .. } => {
-                return Some(Input::Press(Button::Mouse(sdl2_map_mouse(button))));
+                return Some(Input::Button(ButtonArgs {
+                    state: ButtonState::Press,
+                    button: Button::Mouse(sdl2_map_mouse(button)),
+                    scancode: None,
+                }));
             }
             Event::MouseButtonUp { mouse_btn: button, .. } => {
-                return Some(Input::Release(Button::Mouse(sdl2_map_mouse(button))));
+                return Some(Input::Button(ButtonArgs {
+                    state: ButtonState::Release,
+                    button: Button::Mouse(sdl2_map_mouse(button)),
+                    scancode: None,
+                }));
             }
             Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
                 if self.is_capturing_cursor {
@@ -343,12 +361,18 @@ impl Sdl2Window {
                     which, axis_idx, normalized_value))));
             }
             Event::JoyButtonDown{ which, button_idx, .. } => {
-                return Some(Input::Press(Button::Controller(ControllerButton::new(
-                    which, button_idx))))
+                return Some(Input::Button(ButtonArgs {
+                    state: ButtonState::Press,
+                    button: Button::Controller(ControllerButton::new(which, button_idx)),
+                    scancode: None,
+                }))
             }
             Event::JoyButtonUp{ which, button_idx, .. } => {
-                return Some(Input::Release(Button::Controller(ControllerButton::new(
-                    which, button_idx))))
+                return Some(Input::Button(ButtonArgs {
+                    state: ButtonState::Release,
+                    button: Button::Controller(ControllerButton::new(which, button_idx)),
+                    scancode: None
+                }))
             }
             Event::FingerDown { touch_id, finger_id, x, y, pressure, .. } => {
                 return Some(Input::Move(Motion::Touch(TouchArgs::new(
