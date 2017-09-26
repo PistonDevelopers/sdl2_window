@@ -405,7 +405,10 @@ impl Sdl2Window {
             Event::Window { win_event: WindowEvent::Leave, .. } => {
                 return Some(Input::Cursor(false));
             }
-            _ => {}
+            _ => {
+                // Return next event, if any.
+                return self.poll_event();
+            }
         }
         None
     }
