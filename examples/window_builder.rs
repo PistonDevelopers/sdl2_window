@@ -1,6 +1,5 @@
 
 extern crate sdl2_window;
-extern crate shader_version;
 extern crate window;
 
 use sdl2_window::Sdl2Window;
