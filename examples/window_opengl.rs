@@ -13,5 +13,6 @@ fn main() {
             .fullscreen(false)
             .vsync(true)
             .opengl(OpenGL::V2_1) // etc
-    ).unwrap();
+    )
+        .unwrap();
 }
