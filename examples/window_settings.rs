@@ -10,5 +10,6 @@ fn main() {
         &WindowSettings::new("SDL Window", (640, 480))
             .fullscreen(false)
             .vsync(true) // etc
-    ).unwrap();
+    )
+        .unwrap();
 }

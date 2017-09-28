@@ -8,30 +8,10 @@ extern crate shader_version;
 extern crate gl;
 
 // External crates.
-use window::{
-    BuildFromWindowSettings,
-    OpenGLWindow,
-    ProcAddress,
-    Window,
-    AdvancedWindow,
-    WindowSettings,
-    Size,
-    Position,
-};
-use input::{
-    keyboard,
-    Button,
-    ButtonArgs,
-    ButtonState,
-    MouseButton,
-    Input,
-    Motion,
-    CloseArgs,
-    ControllerAxisArgs,
-    ControllerButton,
-    Touch,
-    TouchArgs,
-};
+use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
+             WindowSettings, Size, Position};
+use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
+            ControllerAxisArgs, ControllerButton, Touch, TouchArgs};
 
 use std::vec::Vec;
 use std::time::Duration;
@@ -94,7 +74,9 @@ impl Sdl2Window {
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
-    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem, settings: &WindowSettings) -> Result<Self, String> {
+    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem,
+                          settings: &WindowSettings)
+                          -> Result<Self, String> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
@@ -123,11 +105,9 @@ impl Sdl2Window {
             gl_attr.set_multisample_samples(settings.get_samples());
         }
 
-        let mut window_builder = video_subsystem.window(
-            &settings.get_title(),
-            settings.get_size().width as u32,
-            settings.get_size().height as u32
-        );
+        let mut window_builder = video_subsystem.window(&settings.get_title(),
+                                                        settings.get_size().width as u32,
+                                                        settings.get_size().height as u32);
 
         let window_builder = window_builder.position_centered()
             .opengl();
@@ -154,7 +134,7 @@ impl Sdl2Window {
 
         let window = match window {
             Ok(w) => w,
-            Err(_) =>
+            Err(_) => {
                 if settings.get_samples() != 0 {
                     // Retry without requiring anti-aliasing.
                     let gl_attr = video_subsystem.gl_attr();
@@ -164,6 +144,7 @@ impl Sdl2Window {
                 } else {
                     try!(window.map_err(|e| format!("{}", e)))
                 }
+            }
         };
 
         // Send text input events.
@@ -192,7 +173,7 @@ impl Sdl2Window {
             video_subsystem: video_subsystem,
             joystick_state: None,
             mouse_relative: None,
-            title: settings.get_title() ,
+            title: settings.get_title(),
             size: settings.get_size(),
             draw_size: settings.get_size(),
         };
@@ -210,7 +191,7 @@ impl Sdl2Window {
         // Open all the joysticks
         for id in 0..available {
             match state.subsystem.open(id) {
-                Ok(c) => { state.joysticks.push(c) },
+                Ok(c) => state.joysticks.push(c),
                 Err(e) => return Err(format!("{}", e)),
             }
         }
@@ -222,39 +203,58 @@ impl Sdl2Window {
 
     fn update_draw_size(&mut self) {
         let (w, h) = self.window.drawable_size();
-        self.draw_size = Size { width: w as u32, height: h as u32 };
+        self.draw_size = Size {
+            width: w as u32,
+            height: h as u32,
+        };
     }
 
     fn wait_event(&mut self) -> Input {
-        if let Some(event) = self.check_pending_event() {
-            return event;
-        };
         loop {
+            if let Some(event) = self.check_pending_event() {
+                return event;
+            };
             let sdl_event = self.sdl_context.event_pump().unwrap().wait_event();
-            if let Some(event) = self.handle_event(Some(sdl_event)) {
+            let mut unknown = false;
+            if let Some(event) = self.handle_event(Some(sdl_event), &mut unknown) {
                 return event;
             }
         }
     }
 
     fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> {
-        if let Some(event) = self.check_pending_event() {
-            return Some(event);
+        let event = self.check_pending_event();
+        if event.is_some() {
+            return event;
         };
+
         let timeout_ms = timeout.as_secs() as u32 * 1000 + (timeout.subsec_nanos() / 1_000_000);
         let sdl_event = self.sdl_context.event_pump().unwrap().wait_event_timeout(timeout_ms);
-        self.handle_event(sdl_event)
+
+        let mut unknown = false;
+        let event = self.handle_event(sdl_event, &mut unknown);
+        if unknown { self.poll_event() } else { event }
     }
 
     fn poll_event(&mut self) -> Option<Input> {
-        if let Some(event) = self.check_pending_event() {
-            return Some(event);
-        };
-        // Even though we create a new EventPump each time we poll an event
-        // this should not be a problem since it only contains phantom data
-        // and therefore should actually not have any overhead.
-        let sdl_event = self.sdl_context.event_pump().unwrap().poll_event();
-        self.handle_event(sdl_event)
+        // Loop for ignoring unknown events.
+        loop {
+            let event = self.check_pending_event();
+            if event.is_some() {
+                return event;
+            };
+
+            // Even though we create a new EventPump each time we poll an event
+            // this should not be a problem since it only contains phantom data
+            // and therefore should actually not have any overhead.
+            let sdl_event = self.sdl_context.event_pump().unwrap().poll_event();
+            let mut unknown = false;
+            let event = self.handle_event(sdl_event, &mut unknown);
+            if unknown {
+                continue;
+            };
+            return event;
+        }
     }
 
     fn check_pending_event(&mut self) -> Option<Input> {
@@ -266,10 +266,13 @@ impl Sdl2Window {
         None
     }
 
-    fn handle_event(&mut self, sdl_event: Option<sdl2::event::Event>) -> Option<Input> {
-        use sdl2::event::{ Event, WindowEvent };
+    fn handle_event(&mut self,
+                    sdl_event: Option<sdl2::event::Event>,
+                    unknown: &mut bool)
+                    -> Option<Input> {
+        use sdl2::event::{Event, WindowEvent};
         let event = match sdl_event {
-            Some( ev ) => {
+            Some(ev) => {
                 if let Event::MouseMotion { xrel, yrel, .. } = ev {
                     // Ignore a specific mouse motion event caused by
                     // change of coordinates when warping the cursor
@@ -287,26 +290,25 @@ impl Sdl2Window {
                 if self.is_capturing_cursor {
                     self.fake_capture();
                 }
-                return None
+                return None;
             }
         };
         match event {
-            Event::Quit{..} => {
+            Event::Quit { .. } => {
                 self.should_close = true;
                 return Some(Input::Close(CloseArgs));
             }
             Event::TextInput { text, .. } => {
                 return Some(Input::Text(text));
             }
-            Event::KeyDown { keycode: Some(key), repeat, scancode, ..} => {
+            Event::KeyDown { keycode: Some(key), repeat, scancode, .. } => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
-                    return self.poll_event()
+                    return self.poll_event();
                 }
 
-                if self.exit_on_esc
-                && key == sdl2::keyboard::Keycode::Escape {
+                if self.exit_on_esc && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
                     return Some(Input::Button(ButtonArgs {
@@ -318,7 +320,7 @@ impl Sdl2Window {
             }
             Event::KeyUp { keycode: Some(key), repeat, scancode, .. } => {
                 if repeat {
-                    return self.poll_event()
+                    return self.poll_event();
                 }
                 return Some(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
@@ -352,7 +354,7 @@ impl Sdl2Window {
             Event::MouseWheel { x, y, .. } => {
                 return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
             }
-            Event::JoyAxisMotion{ which, axis_idx, value: val, .. } => {
+            Event::JoyAxisMotion { which, axis_idx, value: val, .. } => {
                 // Axis motion is an absolute value in the range
                 // [-32768, 32767]. Normalize it down to a float.
                 use std::i16::MAX;
@@ -360,34 +362,42 @@ impl Sdl2Window {
                 return Some(Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
                     which, axis_idx, normalized_value))));
             }
-            Event::JoyButtonDown{ which, button_idx, .. } => {
+            Event::JoyButtonDown { which, button_idx, .. } => {
                 return Some(Input::Button(ButtonArgs {
                     state: ButtonState::Press,
                     button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
                 }))
             }
-            Event::JoyButtonUp{ which, button_idx, .. } => {
+            Event::JoyButtonUp { which, button_idx, .. } => {
                 return Some(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
                     button: Button::Controller(ControllerButton::new(which, button_idx)),
-                    scancode: None
+                    scancode: None,
                 }))
             }
             Event::FingerDown { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(
-                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::Start))))
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+                                                                     finger_id,
+                                                                     [x as f64, y as f64],
+                                                                     pressure as f64,
+                                                                     Touch::Start))))
             }
             Event::FingerMotion { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(
-                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::Move))))
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+                                                                     finger_id,
+                                                                     [x as f64, y as f64],
+                                                                     pressure as f64,
+                                                                     Touch::Move))))
             }
             Event::FingerUp { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(
-                    touch_id, finger_id, [x as f64, y as f64], pressure as f64, Touch::End))))
+                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+                                                                     finger_id,
+                                                                     [x as f64, y as f64],
+                                                                     pressure as f64,
+                                                                     Touch::End))))
             }
-            Event::Window {
-                win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
+            Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
                 self.size.width = w as u32;
                 self.size.height = h as u32;
                 self.update_draw_size();
@@ -406,8 +416,8 @@ impl Sdl2Window {
                 return Some(Input::Cursor(false));
             }
             _ => {
-                // Return next event, if any.
-                return self.poll_event();
+                *unknown = true;
+                return None;
             }
         }
         None
@@ -422,9 +432,7 @@ impl Sdl2Window {
         let dy = cy - s.y();
         if dx != 0 || dy != 0 {
             self.ignore_relative_event = Some((dx, dy));
-            self.sdl_context.mouse().warp_mouse_in_window(
-                &self.window, cx as i32, cy as i32
-            );
+            self.sdl_context.mouse().warp_mouse_in_window(&self.window, cx as i32, cy as i32);
         }
     }
 }
@@ -442,14 +450,30 @@ impl Drop for Sdl2Window {
 }
 
 impl Window for Sdl2Window {
-    fn should_close(&self) -> bool { self.should_close }
-    fn set_should_close(&mut self, value: bool) { self.should_close = value; }
-    fn swap_buffers(&mut self) { self.window.gl_swap_window(); }
-    fn size(&self) -> Size { self.size }
-    fn wait_event(&mut self) -> Input { self.wait_event() }
-    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> { self.wait_event_timeout(timeout) }
-    fn poll_event(&mut self) -> Option<Input> { self.poll_event() }
-    fn draw_size(&self) -> Size { self.draw_size }
+    fn should_close(&self) -> bool {
+        self.should_close
+    }
+    fn set_should_close(&mut self, value: bool) {
+        self.should_close = value;
+    }
+    fn swap_buffers(&mut self) {
+        self.window.gl_swap_window();
+    }
+    fn size(&self) -> Size {
+        self.size
+    }
+    fn wait_event(&mut self) -> Input {
+        self.wait_event()
+    }
+    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> {
+        self.wait_event_timeout(timeout)
+    }
+    fn poll_event(&mut self) -> Option<Input> {
+        self.poll_event()
+    }
+    fn draw_size(&self) -> Size {
+        self.draw_size
+    }
 }
 
 impl AdvancedWindow for Sdl2Window {
@@ -460,8 +484,12 @@ impl AdvancedWindow for Sdl2Window {
         let _ = self.window.set_title(&value);
         self.title = value
     }
-    fn get_exit_on_esc(&self) -> bool { self.exit_on_esc }
-    fn set_exit_on_esc(&mut self, value: bool) { self.exit_on_esc = value; }
+    fn get_exit_on_esc(&self) -> bool {
+        self.exit_on_esc
+    }
+    fn set_exit_on_esc(&mut self, value: bool) {
+        self.exit_on_esc = value;
+    }
     fn set_capture_cursor(&mut self, value: bool) {
         // Normally it should call `.set_relative_mouse_mode(value)`,
         // but since it does not emit relative mouse events,
@@ -475,8 +503,12 @@ impl AdvancedWindow for Sdl2Window {
             self.fake_capture();
         }
     }
-    fn show(&mut self) { self.window.show(); }
-    fn hide(&mut self) { self.window.hide(); }
+    fn show(&mut self) {
+        self.window.show();
+    }
+    fn hide(&mut self) {
+        self.window.hide();
+    }
     fn get_position(&self) -> Option<Position> {
         let (x, y) = self.window.position();
         Some(Position { x: x, y: y })
