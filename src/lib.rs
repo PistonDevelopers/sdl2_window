@@ -519,6 +519,11 @@ impl AdvancedWindow for Sdl2Window {
         let pos: Position = pos.into();
         self.window.set_position(WindowPos::Positioned(pos.x), WindowPos::Positioned(pos.y));
     }
+    fn set_size<S: Into<Size>>(&mut self, size: S) {
+        let size: Size = size.into();
+        let _ = self.window.set_size(size.width, size.height);
+        self.update_draw_size();
+    }
 }
 
 impl OpenGLWindow for Sdl2Window {
