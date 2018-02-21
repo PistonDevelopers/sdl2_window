@@ -55,8 +55,6 @@ pub struct Sdl2Window {
     ignore_relative_event: Option<(i32, i32)>,
     exit_on_esc: bool,
     title: String,
-    size: Size,
-    draw_size: Size,
 }
 
 impl Sdl2Window {
@@ -162,7 +160,7 @@ impl Sdl2Window {
             video_subsystem.gl_set_swap_interval(0);
         }
 
-        let mut window = Sdl2Window {
+        let window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
             is_capturing_cursor: false,
@@ -174,10 +172,7 @@ impl Sdl2Window {
             joystick_state: None,
             mouse_relative: None,
             title: settings.get_title(),
-            size: settings.get_size(),
-            draw_size: settings.get_size(),
         };
-        window.update_draw_size();
         Ok(window)
     }
 
@@ -199,14 +194,6 @@ impl Sdl2Window {
         self.joystick_state = Some(state);
 
         Ok(available)
-    }
-
-    fn update_draw_size(&mut self) {
-        let (w, h) = self.window.drawable_size();
-        self.draw_size = Size {
-            width: w as u32,
-            height: h as u32,
-        };
     }
 
     fn wait_event(&mut self) -> Input {
@@ -398,9 +385,6 @@ impl Sdl2Window {
                                                                      Touch::End))))
             }
             Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
-                self.size.width = w as u32;
-                self.size.height = h as u32;
-                self.update_draw_size();
                 return Some(Input::Resize(w as u32, h as u32));
             }
             Event::Window { win_event: WindowEvent::FocusGained, .. } => {
@@ -425,8 +409,9 @@ impl Sdl2Window {
 
     fn fake_capture(&mut self) {
         // Fake capturing of cursor.
-        let cx = (self.size.width / 2) as i32;
-        let cy = (self.size.height / 2) as i32;
+        let (w, h) = self.window.size();
+        let cx = (w / 2) as i32;
+        let cy = (h / 2) as i32;
         let s = self.sdl_context.event_pump().unwrap().mouse_state();
         let dx = cx - s.x();
         let dy = cy - s.y();
@@ -460,7 +445,8 @@ impl Window for Sdl2Window {
         self.window.gl_swap_window();
     }
     fn size(&self) -> Size {
-        self.size
+        let (w, h) = self.window.size();
+        Size {width: w, height: h}
     }
     fn wait_event(&mut self) -> Input {
         self.wait_event()
@@ -472,7 +458,8 @@ impl Window for Sdl2Window {
         self.poll_event()
     }
     fn draw_size(&self) -> Size {
-        self.draw_size
+        let (w, h) = self.window.drawable_size();
+        Size {width: w, height: h}
     }
 }
 
@@ -522,7 +509,6 @@ impl AdvancedWindow for Sdl2Window {
     fn set_size<S: Into<Size>>(&mut self, size: S) {
         let size: Size = size.into();
         let _ = self.window.set_size(size.width, size.height);
-        self.update_draw_size();
     }
 }
 
