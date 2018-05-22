@@ -11,7 +11,9 @@ extern crate gl;
 use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
              WindowSettings, Size, Position};
 use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
-            ControllerAxisArgs, ControllerButton, Touch, TouchArgs};
+            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat};
+use input::HatState as PistonHat;
+use sdl2::joystick::HatState;
 
 use std::vec::Vec;
 use std::time::Duration;
@@ -362,6 +364,24 @@ impl Sdl2Window {
                     button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
                 }))
+            }
+            Event::JoyHatMotion { which, hat_idx, state, .. } => {
+              let state = match state {
+                HatState::Centered => PistonHat::Centered,
+                HatState::Up => PistonHat::Up,
+                HatState::Right => PistonHat::Right,
+                HatState::Down => PistonHat::Down,
+                HatState::Left => PistonHat::Left,
+                HatState::RightUp => PistonHat::RightUp,
+                HatState::RightDown => PistonHat::RightDown,
+                HatState::LeftUp => PistonHat::LeftUp,
+                HatState::LeftDown => PistonHat::LeftDown,
+              };
+              return Some(Input::Button(ButtonArgs {
+                state: ButtonState::Release,
+                button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
+                scancode: None,
+              }))
             }
             Event::FingerDown { touch_id, finger_id, x, y, pressure, .. } => {
                 return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
