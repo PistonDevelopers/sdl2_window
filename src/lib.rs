@@ -405,7 +405,7 @@ impl Sdl2Window {
                                                                      Touch::End))))
             }
             Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
-                return Some(Input::Resize(w as u32, h as u32));
+                return Some(Input::Resize(w as f64, h as f64));
             }
             Event::Window { win_event: WindowEvent::FocusGained, .. } => {
                 return Some(Input::Focus(true));
@@ -466,7 +466,7 @@ impl Window for Sdl2Window {
     }
     fn size(&self) -> Size {
         let (w, h) = self.window.size();
-        Size {width: w, height: h}
+        Size {width: w as f64, height: h as f64}
     }
     fn wait_event(&mut self) -> Input {
         self.wait_event()
@@ -479,7 +479,7 @@ impl Window for Sdl2Window {
     }
     fn draw_size(&self) -> Size {
         let (w, h) = self.window.drawable_size();
-        Size {width: w, height: h}
+        Size {width: w as f64, height: h as f64}
     }
 }
 
@@ -528,7 +528,7 @@ impl AdvancedWindow for Sdl2Window {
     }
     fn set_size<S: Into<Size>>(&mut self, size: S) {
         let size: Size = size.into();
-        let _ = self.window.set_size(size.width, size.height);
+        let _ = self.window.set_size(size.width as u32, size.height as u32);
     }
 }
 
