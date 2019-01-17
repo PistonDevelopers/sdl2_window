@@ -17,6 +17,7 @@ use sdl2::joystick::HatState;
 
 use std::vec::Vec;
 use std::time::Duration;
+use std::error::Error;
 
 pub use shader_version::OpenGL;
 
@@ -62,13 +63,12 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
     /// You can retrieve both via the public fields on the `Sdl2Window` struct.
-    pub fn new(settings: &WindowSettings) -> Result<Self, String> {
-        let sdl = try!(sdl2::init().map_err(|e| format!("{}", e)));
-        let video_subsystem = try!(sdl.video()
-            .map_err(|e| format!("{}", e)));
+    pub fn new(settings: &WindowSettings) -> Result<Self, Box<Error>> {
+        let sdl = sdl2::init()?;
+        let video_subsystem = sdl.video()?;
         let mut window = try!(Self::with_subsystem(video_subsystem, settings));
         if settings.get_controllers() {
-            try!(window.init_joysticks().map_err(|e| e));
+            window.init_joysticks()?;
         }
         Ok(window)
     }
@@ -157,9 +157,9 @@ impl Sdl2Window {
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
 
         if settings.get_vsync() {
-            video_subsystem.gl_set_swap_interval(1);
+            video_subsystem.gl_set_swap_interval(1)?;
         } else {
-            video_subsystem.gl_set_swap_interval(0);
+            video_subsystem.gl_set_swap_interval(0)?;
         }
 
         let window = Sdl2Window {
@@ -443,7 +443,7 @@ impl Sdl2Window {
 }
 
 impl BuildFromWindowSettings for Sdl2Window {
-    fn build_from_window_settings(settings: &WindowSettings) -> Result<Self, String> {
+    fn build_from_window_settings(settings: &WindowSettings) -> Result<Self, Box<Error>> {
         Sdl2Window::new(settings)
     }
 }
