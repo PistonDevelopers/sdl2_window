@@ -49,6 +49,7 @@ pub struct Sdl2Window {
     pub video_subsystem: sdl2::VideoSubsystem,
     joystick_state: Option<JoystickState>,
     should_close: bool,
+    automatic_close: bool,
     // Stores relative coordinates to emit on next poll.
     mouse_relative: Option<(f64, f64)>,
     // Whether the cursor is captured.
@@ -165,6 +166,7 @@ impl Sdl2Window {
         let window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
+            automatic_close: settings.get_automatic_close(),
             is_capturing_cursor: false,
             ignore_relative_event: None,
             window: window,
@@ -284,7 +286,9 @@ impl Sdl2Window {
         };
         match event {
             Event::Quit { .. } => {
-                self.should_close = true;
+                if self.automatic_close {
+                    self.should_close = true;
+                }
                 return Some(Input::Close(CloseArgs));
             }
             Event::TextInput { text, .. } => {
@@ -490,6 +494,12 @@ impl AdvancedWindow for Sdl2Window {
     fn set_title(&mut self, value: String) {
         let _ = self.window.set_title(&value);
         self.title = value
+    }
+    fn get_automatic_close(&self) -> bool {
+        self.automatic_close
+    }
+    fn set_automatic_close(&mut self, value: bool) {
+        self.automatic_close = value;
     }
     fn get_exit_on_esc(&self) -> bool {
         self.exit_on_esc
