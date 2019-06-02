@@ -9,7 +9,7 @@ extern crate gl;
 
 // External crates.
 use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
-             WindowSettings, Size, Position};
+             WindowSettings, Size, Position, Api};
 use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
             ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat};
 use input::HatState as PistonHat;
@@ -81,8 +81,10 @@ impl Sdl2Window {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
-        let opengl = settings.get_maybe_opengl().unwrap_or(OpenGL::V3_2);
-        let (major, minor) = opengl.get_major_minor();
+        let api = settings.get_maybe_graphics_api().unwrap_or(Api::opengl(3, 2));
+        if api.api != "OpenGL" {
+            return Err("Expected OpenGL api in window settings when creating window".into());
+        }
 
         {
             let gl_attr = video_subsystem.gl_attr();
@@ -93,11 +95,11 @@ impl Sdl2Window {
             gl_attr.set_blue_size(8);
             gl_attr.set_alpha_size(8);
             gl_attr.set_stencil_size(8);
-            gl_attr.set_context_version(major as u8, minor as u8);
+            gl_attr.set_context_version(api.major as u8, api.minor as u8);
             gl_attr.set_framebuffer_srgb_compatible(settings.get_srgb());
         }
 
-        if opengl >= OpenGL::V3_2 {
+        if api >= Api::opengl(3, 2) {
             video_subsystem.gl_attr().set_context_profile(GLProfile::Core);
         }
         if settings.get_samples() != 0 {
