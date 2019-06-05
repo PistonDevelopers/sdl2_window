@@ -9,7 +9,7 @@ extern crate gl;
 
 // External crates.
 use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
-             WindowSettings, Size, Position, Api};
+             WindowSettings, Size, Position, Api, UnsupportedGraphicsApiError};
 use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
             ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat};
 use input::HatState as PistonHat;
@@ -67,7 +67,7 @@ impl Sdl2Window {
     pub fn new(settings: &WindowSettings) -> Result<Self, Box<Error>> {
         let sdl = sdl2::init()?;
         let video_subsystem = sdl.video()?;
-        let mut window = try!(Self::with_subsystem(video_subsystem, settings));
+        let mut window = Self::with_subsystem(video_subsystem, settings)?;
         if settings.get_controllers() {
             window.init_joysticks()?;
         }
@@ -77,13 +77,16 @@ impl Sdl2Window {
     /// Creates a window with the supplied SDL Video subsystem.
     pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem,
                           settings: &WindowSettings)
-                          -> Result<Self, String> {
+                          -> Result<Self, Box<Error>> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
         let api = settings.get_maybe_graphics_api().unwrap_or(Api::opengl(3, 2));
         if api.api != "OpenGL" {
-            return Err("Expected OpenGL api in window settings when creating window".into());
+            return Err(UnsupportedGraphicsApiError {
+                found: api.api,
+                expected: vec!["OpenGL".into()],
+            }.into());
         }
 
         {
