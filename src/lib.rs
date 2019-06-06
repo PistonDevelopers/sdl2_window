@@ -11,7 +11,7 @@ extern crate gl;
 use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
              WindowSettings, Size, Position, Api, UnsupportedGraphicsApiError};
 use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
-            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat};
+            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat, TimeStamp};
 use input::HatState as PistonHat;
 use sdl2::joystick::HatState;
 
@@ -51,7 +51,7 @@ pub struct Sdl2Window {
     should_close: bool,
     automatic_close: bool,
     // Stores relative coordinates to emit on next poll.
-    mouse_relative: Option<(f64, f64)>,
+    mouse_relative: Option<(f64, f64, TimeStamp)>,
     // Whether the cursor is captured.
     is_capturing_cursor: bool,
     // Used to ignore relative events when warping mouse
@@ -205,7 +205,7 @@ impl Sdl2Window {
         Ok(available)
     }
 
-    fn wait_event(&mut self) -> Input {
+    fn wait_event(&mut self) -> (Input, Option<TimeStamp>) {
         loop {
             if let Some(event) = self.check_pending_event() {
                 return event;
@@ -218,7 +218,7 @@ impl Sdl2Window {
         }
     }
 
-    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> {
+    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<(Input, Option<TimeStamp>)> {
         let event = self.check_pending_event();
         if event.is_some() {
             return event;
@@ -232,7 +232,7 @@ impl Sdl2Window {
         if unknown { self.poll_event() } else { event }
     }
 
-    fn poll_event(&mut self) -> Option<Input> {
+    fn poll_event(&mut self) -> Option<(Input, Option<TimeStamp>)> {
         // Loop for ignoring unknown events.
         loop {
             let event = self.check_pending_event();
@@ -253,11 +253,11 @@ impl Sdl2Window {
         }
     }
 
-    fn check_pending_event(&mut self) -> Option<Input> {
+    fn check_pending_event(&mut self) -> Option<(Input, Option<TimeStamp>)> {
         // First check for a pending relative mouse move event.
-        if let Some((x, y)) = self.mouse_relative {
+        if let Some((x, y, timestamp)) = self.mouse_relative {
             self.mouse_relative = None;
-            return Some(Input::Move(Motion::MouseRelative(x, y)));
+            return Some((Input::Move(Motion::MouseRelative(x, y)), Some(timestamp)));
         }
         None
     }
@@ -265,7 +265,7 @@ impl Sdl2Window {
     fn handle_event(&mut self,
                     sdl_event: Option<sdl2::event::Event>,
                     unknown: &mut bool)
-                    -> Option<Input> {
+                    -> Option<(Input, Option<TimeStamp>)> {
         use sdl2::event::{Event, WindowEvent};
         let event = match sdl_event {
             Some(ev) => {
@@ -290,16 +290,16 @@ impl Sdl2Window {
             }
         };
         match event {
-            Event::Quit { .. } => {
+            Event::Quit { timestamp, .. } => {
                 if self.automatic_close {
                     self.should_close = true;
                 }
-                return Some(Input::Close(CloseArgs));
+                return Some((Input::Close(CloseArgs), Some(timestamp)));
             }
-            Event::TextInput { text, .. } => {
-                return Some(Input::Text(text));
+            Event::TextInput { text, timestamp, .. } => {
+                return Some((Input::Text(text), Some(timestamp)));
             }
-            Event::KeyDown { keycode: Some(key), repeat, scancode, .. } => {
+            Event::KeyDown { keycode: Some(key), repeat, scancode, timestamp, .. } => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
@@ -309,72 +309,72 @@ impl Sdl2Window {
                 if self.exit_on_esc && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(Input::Button(ButtonArgs {
+                    return Some((Input::Button(ButtonArgs {
                         state: ButtonState::Press,
                         button: Button::Keyboard(sdl2_map_key(key)),
                         scancode: scancode.map(|scode| scode as i32),
-                    }));
+                    }), Some(timestamp)));
                 }
             }
-            Event::KeyUp { keycode: Some(key), repeat, scancode, .. } => {
+            Event::KeyUp { keycode: Some(key), repeat, scancode, timestamp, .. } => {
                 if repeat {
                     return self.poll_event();
                 }
-                return Some(Input::Button(ButtonArgs {
+                return Some((Input::Button(ButtonArgs {
                     state: ButtonState::Release,
                     button: Button::Keyboard(sdl2_map_key(key)),
                     scancode: scancode.map(|scode| scode as i32),
-                }));
+                }), Some(timestamp)));
             }
-            Event::MouseButtonDown { mouse_btn: button, .. } => {
-                return Some(Input::Button(ButtonArgs {
+            Event::MouseButtonDown { mouse_btn: button, timestamp, .. } => {
+                return Some((Input::Button(ButtonArgs {
                     state: ButtonState::Press,
                     button: Button::Mouse(sdl2_map_mouse(button)),
                     scancode: None,
-                }));
+                }), Some(timestamp)));
             }
-            Event::MouseButtonUp { mouse_btn: button, .. } => {
-                return Some(Input::Button(ButtonArgs {
+            Event::MouseButtonUp { mouse_btn: button, timestamp, .. } => {
+                return Some((Input::Button(ButtonArgs {
                     state: ButtonState::Release,
                     button: Button::Mouse(sdl2_map_mouse(button)),
                     scancode: None,
-                }));
+                }), Some(timestamp)));
             }
-            Event::MouseMotion { x, y, xrel: dx, yrel: dy, .. } => {
+            Event::MouseMotion { x, y, xrel: dx, yrel: dy, timestamp, .. } => {
                 if self.is_capturing_cursor {
                     // Skip normal mouse movement and emit relative motion only.
-                    return Some(Input::Move(Motion::MouseRelative(dx as f64, dy as f64)));
+                    return Some((Input::Move(Motion::MouseRelative(dx as f64, dy as f64)), Some(timestamp)));
                 }
                 // Send relative move movement next time.
-                self.mouse_relative = Some((dx as f64, dy as f64));
-                return Some(Input::Move(Motion::MouseCursor(x as f64, y as f64)));
+                self.mouse_relative = Some((dx as f64, dy as f64, timestamp));
+                return Some((Input::Move(Motion::MouseCursor(x as f64, y as f64)), Some(timestamp)));
             }
-            Event::MouseWheel { x, y, .. } => {
-                return Some(Input::Move(Motion::MouseScroll(x as f64, y as f64)));
+            Event::MouseWheel { x, y, timestamp, .. } => {
+                return Some((Input::Move(Motion::MouseScroll(x as f64, y as f64)), Some(timestamp)));
             }
-            Event::JoyAxisMotion { which, axis_idx, value: val, .. } => {
+            Event::JoyAxisMotion { which, axis_idx, value: val, timestamp, .. } => {
                 // Axis motion is an absolute value in the range
                 // [-32768, 32767]. Normalize it down to a float.
                 use std::i16::MAX;
                 let normalized_value = val as f64 / MAX as f64;
-                return Some(Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
-                    which, axis_idx, normalized_value))));
+                return Some((Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
+                    which, axis_idx, normalized_value))), Some(timestamp)));
             }
-            Event::JoyButtonDown { which, button_idx, .. } => {
-                return Some(Input::Button(ButtonArgs {
+            Event::JoyButtonDown { which, button_idx, timestamp, .. } => {
+                return Some((Input::Button(ButtonArgs {
                     state: ButtonState::Press,
                     button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
-                }))
+                }), Some(timestamp)))
             }
-            Event::JoyButtonUp { which, button_idx, .. } => {
-                return Some(Input::Button(ButtonArgs {
+            Event::JoyButtonUp { which, button_idx, timestamp, .. } => {
+                return Some((Input::Button(ButtonArgs {
                     state: ButtonState::Release,
                     button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
-                }))
+                }), Some(timestamp)))
             }
-            Event::JoyHatMotion { which, hat_idx, state, .. } => {
+            Event::JoyHatMotion { which, hat_idx, state, timestamp, .. } => {
               let state = match state {
                 HatState::Centered => PistonHat::Centered,
                 HatState::Up => PistonHat::Up,
@@ -386,47 +386,50 @@ impl Sdl2Window {
                 HatState::LeftUp => PistonHat::LeftUp,
                 HatState::LeftDown => PistonHat::LeftDown,
               };
-              return Some(Input::Button(ButtonArgs {
-                state: ButtonState::Release,
-                button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
-                scancode: None,
-              }))
+              return Some((Input::Button(ButtonArgs {
+                    state: ButtonState::Release,
+                    button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
+                    scancode: None,
+                }), Some(timestamp)))
             }
-            Event::FingerDown { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+            Event::FingerDown { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
+                return Some((Input::Move(Motion::Touch(TouchArgs::new(touch_id,
                                                                      finger_id,
                                                                      [x as f64, y as f64],
                                                                      pressure as f64,
-                                                                     Touch::Start))))
+                                                                     Touch::Start))),
+                             Some(timestamp)))
             }
-            Event::FingerMotion { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+            Event::FingerMotion { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
+                return Some((Input::Move(Motion::Touch(TouchArgs::new(touch_id,
                                                                      finger_id,
                                                                      [x as f64, y as f64],
                                                                      pressure as f64,
-                                                                     Touch::Move))))
+                                                                     Touch::Move))),
+                             Some(timestamp)))
             }
-            Event::FingerUp { touch_id, finger_id, x, y, pressure, .. } => {
-                return Some(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
+            Event::FingerUp { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
+                return Some((Input::Move(Motion::Touch(TouchArgs::new(touch_id,
                                                                      finger_id,
                                                                      [x as f64, y as f64],
                                                                      pressure as f64,
-                                                                     Touch::End))))
+                                                                     Touch::End))),
+                             Some(timestamp)))
             }
-            Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), .. } => {
-                return Some(Input::Resize(w as f64, h as f64));
+            Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), timestamp, .. } => {
+                return Some((Input::Resize(w as f64, h as f64), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::FocusGained, .. } => {
-                return Some(Input::Focus(true));
+            Event::Window { win_event: WindowEvent::FocusGained, timestamp, .. } => {
+                return Some((Input::Focus(true), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::FocusLost, .. } => {
-                return Some(Input::Focus(false));
+            Event::Window { win_event: WindowEvent::FocusLost, timestamp, .. } => {
+                return Some((Input::Focus(false), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::Enter, .. } => {
-                return Some(Input::Cursor(true));
+            Event::Window { win_event: WindowEvent::Enter, timestamp, .. } => {
+                return Some((Input::Cursor(true), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::Leave, .. } => {
-                return Some(Input::Cursor(false));
+            Event::Window { win_event: WindowEvent::Leave, timestamp, .. } => {
+                return Some((Input::Cursor(false), Some(timestamp)));
             }
             _ => {
                 *unknown = true;
@@ -477,13 +480,13 @@ impl Window for Sdl2Window {
         let (w, h) = self.window.size();
         Size {width: w as f64, height: h as f64}
     }
-    fn wait_event(&mut self) -> Input {
+    fn wait_event(&mut self) -> (Input, Option<TimeStamp>) {
         self.wait_event()
     }
-    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<Input> {
+    fn wait_event_timeout(&mut self, timeout: Duration) -> Option<(Input, Option<TimeStamp>)> {
         self.wait_event_timeout(timeout)
     }
-    fn poll_event(&mut self) -> Option<Input> {
+    fn poll_event(&mut self) -> Option<(Input, Option<TimeStamp>)> {
         self.poll_event()
     }
     fn draw_size(&self) -> Size {
