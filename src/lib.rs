@@ -11,7 +11,8 @@ extern crate gl;
 use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
              WindowSettings, Size, Position, Api, UnsupportedGraphicsApiError};
 use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
-            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat, TimeStamp};
+            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat, TimeStamp,
+            ResizeArgs};
 use input::HatState as PistonHat;
 use sdl2::joystick::HatState;
 
@@ -257,7 +258,7 @@ impl Sdl2Window {
         // First check for a pending relative mouse move event.
         if let Some((x, y, timestamp)) = self.mouse_relative {
             self.mouse_relative = None;
-            return Some((Input::Move(Motion::MouseRelative(x, y)), Some(timestamp)));
+            return Some((Input::Move(Motion::MouseRelative([x, y])), Some(timestamp)));
         }
         None
     }
@@ -343,14 +344,14 @@ impl Sdl2Window {
             Event::MouseMotion { x, y, xrel: dx, yrel: dy, timestamp, .. } => {
                 if self.is_capturing_cursor {
                     // Skip normal mouse movement and emit relative motion only.
-                    return Some((Input::Move(Motion::MouseRelative(dx as f64, dy as f64)), Some(timestamp)));
+                    return Some((Input::Move(Motion::MouseRelative([dx as f64, dy as f64])), Some(timestamp)));
                 }
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64, timestamp));
-                return Some((Input::Move(Motion::MouseCursor(x as f64, y as f64)), Some(timestamp)));
+                return Some((Input::Move(Motion::MouseCursor([x as f64, y as f64])), Some(timestamp)));
             }
             Event::MouseWheel { x, y, timestamp, .. } => {
-                return Some((Input::Move(Motion::MouseScroll(x as f64, y as f64)), Some(timestamp)));
+                return Some((Input::Move(Motion::MouseScroll([x as f64, y as f64])), Some(timestamp)));
             }
             Event::JoyAxisMotion { which, axis_idx, value: val, timestamp, .. } => {
                 // Axis motion is an absolute value in the range
@@ -417,7 +418,13 @@ impl Sdl2Window {
                              Some(timestamp)))
             }
             Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), timestamp, .. } => {
-                return Some((Input::Resize(w as f64, h as f64), Some(timestamp)));
+                let draw_size = self.draw_size();
+                return Some((Input::Resize(ResizeArgs {
+                    width: w as f64,
+                    height: h as f64,
+                    draw_width: draw_size.width as u32,
+                    draw_height: draw_size.height as u32,
+                }), Some(timestamp)));
             }
             Event::Window { win_event: WindowEvent::FocusGained, timestamp, .. } => {
                 return Some((Input::Focus(true), Some(timestamp)));
