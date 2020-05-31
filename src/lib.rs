@@ -65,20 +65,16 @@ pub struct Sdl2Window {
 impl Sdl2Window {
     /// Creates a new game window for SDL2. This will initialize SDL and the video subsystem.
     /// You can retrieve both via the public fields on the `Sdl2Window` struct.
-    pub fn new(settings: &WindowSettings) -> Result<Self, Box<Error>> {
+    pub fn new(settings: &WindowSettings) -> Result<Self, Box<dyn Error>> {
         let sdl = sdl2::init()?;
         let video_subsystem = sdl.video()?;
-        let mut window = Self::with_subsystem(video_subsystem, settings)?;
-        if settings.get_controllers() {
-            window.init_joysticks()?;
-        }
-        Ok(window)
+        Ok(Self::with_subsystem(video_subsystem, settings)?)
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
     pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem,
                           settings: &WindowSettings)
-                          -> Result<Self, Box<Error>> {
+                          -> Result<Self, Box<dyn Error>> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
@@ -147,9 +143,9 @@ impl Sdl2Window {
                     let gl_attr = video_subsystem.gl_attr();
                     gl_attr.set_multisample_buffers(0);
                     gl_attr.set_multisample_samples(0);
-                    try!(window_builder.build().map_err(|e| format!("{}", e)))
+                    window_builder.build().map_err(|e| format!("{}", e))?
                 } else {
-                    try!(window.map_err(|e| format!("{}", e)))
+                    window.map_err(|e| format!("{}", e))?
                 }
             }
         };
@@ -157,8 +153,8 @@ impl Sdl2Window {
         // Send text input events.
         video_subsystem.text_input().start();
 
-        let context = try!(window.gl_create_context()
-            .map_err(|e| format!("{}", e)));
+        let context = window.gl_create_context()
+            .map_err(|e| format!("{}", e))?;
 
         // Load the OpenGL function pointers.
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
@@ -169,7 +165,7 @@ impl Sdl2Window {
             video_subsystem.gl_set_swap_interval(0)?;
         }
 
-        let window = Sdl2Window {
+        let mut window = Sdl2Window {
             exit_on_esc: settings.get_exit_on_esc(),
             should_close: false,
             automatic_close: settings.get_automatic_close(),
@@ -183,15 +179,21 @@ impl Sdl2Window {
             mouse_relative: None,
             title: settings.get_title(),
         };
+        if settings.get_controllers() {
+            window.init_joysticks()?;
+        }
+        if settings.get_transparent() {
+            let _ = window.window.set_opacity(0.0);
+        }
         Ok(window)
     }
 
     /// Initialize the joystick subsystem. Required before joystick input
     /// events will be returned. Returns the number available or error.
     pub fn init_joysticks(&mut self) -> Result<u32, String> {
-        let subsystem = try!(self.sdl_context.joystick().map_err(|e| format!("{}", e)));
+        let subsystem = self.sdl_context.joystick().map_err(|e| format!("{}", e))?;
         let mut state = JoystickState::new(subsystem);
-        let available = try!(state.subsystem.num_joysticks().map_err(|e| format!("{}", e)));
+        let available = state.subsystem.num_joysticks().map_err(|e| format!("{}", e))?;
 
         // Open all the joysticks
         for id in 0..available {
@@ -366,19 +368,19 @@ impl Sdl2Window {
                 let normalized_value = val as f64 / MAX as f64;
                 return Some(input::Event::Input(Input::Move(
                     Motion::ControllerAxis(ControllerAxisArgs::new(
-                    which, axis_idx, normalized_value))), Some(timestamp)));
+                    which as i32, axis_idx, normalized_value))), Some(timestamp)));
             }
             Event::JoyButtonDown { which, button_idx, timestamp, .. } => {
                 return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Press,
-                    button: Button::Controller(ControllerButton::new(which, button_idx)),
+                    button: Button::Controller(ControllerButton::new(which as i32, button_idx)),
                     scancode: None,
                 }), Some(timestamp)))
             }
             Event::JoyButtonUp { which, button_idx, timestamp, .. } => {
                 return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
-                    button: Button::Controller(ControllerButton::new(which, button_idx)),
+                    button: Button::Controller(ControllerButton::new(which as i32, button_idx)),
                     scancode: None,
                 }), Some(timestamp)))
             }
@@ -396,7 +398,7 @@ impl Sdl2Window {
               };
               return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
-                    button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
+                    button: Button::Hat(ControllerHat::new(which as i32, hat_idx, state)),
                     scancode: None,
                 }), Some(timestamp)))
             }
@@ -467,7 +469,7 @@ impl Sdl2Window {
 }
 
 impl BuildFromWindowSettings for Sdl2Window {
-    fn build_from_window_settings(settings: &WindowSettings) -> Result<Self, Box<Error>> {
+    fn build_from_window_settings(settings: &WindowSettings) -> Result<Self, Box<dyn Error>> {
         Sdl2Window::new(settings)
     }
 }
