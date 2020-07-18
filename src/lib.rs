@@ -368,19 +368,19 @@ impl Sdl2Window {
                 let normalized_value = val as f64 / MAX as f64;
                 return Some(input::Event::Input(Input::Move(
                     Motion::ControllerAxis(ControllerAxisArgs::new(
-                    which as i32, axis_idx, normalized_value))), Some(timestamp)));
+                    which, axis_idx, normalized_value))), Some(timestamp)));
             }
             Event::JoyButtonDown { which, button_idx, timestamp, .. } => {
                 return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Press,
-                    button: Button::Controller(ControllerButton::new(which as i32, button_idx)),
+                    button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
                 }), Some(timestamp)))
             }
             Event::JoyButtonUp { which, button_idx, timestamp, .. } => {
                 return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
-                    button: Button::Controller(ControllerButton::new(which as i32, button_idx)),
+                    button: Button::Controller(ControllerButton::new(which, button_idx)),
                     scancode: None,
                 }), Some(timestamp)))
             }
@@ -398,7 +398,7 @@ impl Sdl2Window {
               };
               return Some(input::Event::Input(Input::Button(ButtonArgs {
                     state: ButtonState::Release,
-                    button: Button::Hat(ControllerHat::new(which as i32, hat_idx, state)),
+                    button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
                     scancode: None,
                 }), Some(timestamp)))
             }
