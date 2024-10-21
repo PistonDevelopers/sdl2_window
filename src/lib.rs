@@ -580,7 +580,12 @@ impl OpenGLWindow for Sdl2Window {
 
 /// Maps a SDL2 key to piston-input key.
 pub fn sdl2_map_key(keycode: sdl2::keyboard::Keycode) -> keyboard::Key {
-    (keycode as u32).into()
+    let keycode = keycode.into_i32();
+    use std::convert::TryInto;
+    let keycode: u32 = keycode
+        .try_into()
+        .expect("sdl keycode purely uses positive numbers");
+    keycode.into()
 }
 
 /// Maps a SDL2 mouse button to piston-input button.
