@@ -1,4 +1,3 @@
-
 extern crate sdl2_window;
 extern crate window;
 
@@ -9,7 +8,7 @@ fn main() {
     let _ = Sdl2Window::new(
         &WindowSettings::new("SDL Window", (640, 480))
             .fullscreen(false)
-            .vsync(true) // etc
+            .vsync(true), // etc
     )
-        .unwrap();
+    .unwrap();
 }

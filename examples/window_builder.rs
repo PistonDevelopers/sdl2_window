@@ -1,4 +1,3 @@
-
 extern crate sdl2_window;
 extern crate window;
 
