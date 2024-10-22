@@ -1,4 +1,3 @@
-
 extern crate sdl2;
 extern crate sdl2_window;
 extern crate window;
@@ -14,7 +13,7 @@ fn main() {
         video_subsystem,
         &WindowSettings::new("SDL Window", (640, 480))
             .fullscreen(false)
-            .vsync(true) // etc
+            .vsync(true), // etc
     )
-        .unwrap();
+    .unwrap();
 }

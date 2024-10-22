@@ -1,24 +1,27 @@
 #![deny(missing_docs)]
 //! A SDL2 window back-end for the Piston game engine.
 
-extern crate sdl2;
-extern crate window;
-extern crate input;
-extern crate shader_version;
 extern crate gl;
+extern crate input;
+extern crate sdl2;
+extern crate shader_version;
+extern crate window;
 
 // External crates.
-use window::{BuildFromWindowSettings, OpenGLWindow, ProcAddress, Window, AdvancedWindow,
-             WindowSettings, Size, Position, Api, UnsupportedGraphicsApiError};
-use input::{keyboard, Button, ButtonArgs, ButtonState, MouseButton, Input, Motion, CloseArgs,
-            ControllerAxisArgs, ControllerButton, Touch, TouchArgs, ControllerHat, TimeStamp,
-            ResizeArgs, Event};
 use input::HatState as PistonHat;
+use input::{
+    keyboard, Button, ButtonArgs, ButtonState, CloseArgs, ControllerAxisArgs, ControllerButton,
+    ControllerHat, Event, Input, Motion, MouseButton, ResizeArgs, TimeStamp, Touch, TouchArgs,
+};
 use sdl2::joystick::HatState;
+use window::{
+    AdvancedWindow, Api, BuildFromWindowSettings, OpenGLWindow, Position, ProcAddress, Size,
+    UnsupportedGraphicsApiError, Window, WindowSettings,
+};
 
-use std::vec::Vec;
-use std::time::Duration;
 use std::error::Error;
+use std::time::Duration;
+use std::vec::Vec;
 
 pub use shader_version::OpenGL;
 
@@ -31,7 +34,7 @@ impl JoystickState {
     fn new(subsystem: sdl2::JoystickSubsystem) -> Self {
         JoystickState {
             joysticks: Vec::new(),
-            subsystem: subsystem,
+            subsystem,
         }
     }
 }
@@ -68,22 +71,26 @@ impl Sdl2Window {
     pub fn new(settings: &WindowSettings) -> Result<Self, Box<dyn Error>> {
         let sdl = sdl2::init()?;
         let video_subsystem = sdl.video()?;
-        Ok(Self::with_subsystem(video_subsystem, settings)?)
+        Self::with_subsystem(video_subsystem, settings)
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
-    pub fn with_subsystem(video_subsystem: sdl2::VideoSubsystem,
-                          settings: &WindowSettings)
-                          -> Result<Self, Box<dyn Error>> {
+    pub fn with_subsystem(
+        video_subsystem: sdl2::VideoSubsystem,
+        settings: &WindowSettings,
+    ) -> Result<Self, Box<dyn Error>> {
         use sdl2::video::GLProfile;
 
         let sdl_context = video_subsystem.sdl();
-        let api = settings.get_maybe_graphics_api().unwrap_or(Api::opengl(3, 2));
+        let api = settings
+            .get_maybe_graphics_api()
+            .unwrap_or(Api::opengl(3, 2));
         if api.api != "OpenGL" {
             return Err(UnsupportedGraphicsApiError {
                 found: api.api,
                 expected: vec!["OpenGL".into()],
-            }.into());
+            }
+            .into());
         }
 
         {
@@ -100,7 +107,9 @@ impl Sdl2Window {
         }
 
         if api >= Api::opengl(3, 2) {
-            video_subsystem.gl_attr().set_context_profile(GLProfile::Core);
+            video_subsystem
+                .gl_attr()
+                .set_context_profile(GLProfile::Core);
         }
         if settings.get_samples() != 0 {
             let gl_attr = video_subsystem.gl_attr();
@@ -108,12 +117,13 @@ impl Sdl2Window {
             gl_attr.set_multisample_samples(settings.get_samples());
         }
 
-        let mut window_builder = video_subsystem.window(&settings.get_title(),
-                                                        settings.get_size().width as u32,
-                                                        settings.get_size().height as u32);
+        let mut window_builder = video_subsystem.window(
+            &settings.get_title(),
+            settings.get_size().width as u32,
+            settings.get_size().height as u32,
+        );
 
-        let window_builder = window_builder.position_centered()
-            .opengl();
+        let window_builder = window_builder.position_centered().opengl();
 
         let window_builder = if settings.get_resizable() {
             window_builder.resizable()
@@ -153,8 +163,7 @@ impl Sdl2Window {
         // Send text input events.
         video_subsystem.text_input().start();
 
-        let context = window.gl_create_context()
-            .map_err(|e| format!("{}", e))?;
+        let context = window.gl_create_context()?;
 
         // Load the OpenGL function pointers.
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
@@ -171,10 +180,10 @@ impl Sdl2Window {
             automatic_close: settings.get_automatic_close(),
             is_capturing_cursor: false,
             ignore_relative_event: None,
-            window: window,
-            context: context,
-            sdl_context: sdl_context,
-            video_subsystem: video_subsystem,
+            window,
+            context,
+            sdl_context,
+            video_subsystem,
             joystick_state: None,
             mouse_relative: None,
             title: settings.get_title(),
@@ -191,9 +200,9 @@ impl Sdl2Window {
     /// Initialize the joystick subsystem. Required before joystick input
     /// events will be returned. Returns the number available or error.
     pub fn init_joysticks(&mut self) -> Result<u32, String> {
-        let subsystem = self.sdl_context.joystick().map_err(|e| format!("{}", e))?;
+        let subsystem = self.sdl_context.joystick()?;
         let mut state = JoystickState::new(subsystem);
-        let available = state.subsystem.num_joysticks().map_err(|e| format!("{}", e))?;
+        let available = state.subsystem.num_joysticks()?;
 
         // Open all the joysticks
         for id in 0..available {
@@ -227,12 +236,20 @@ impl Sdl2Window {
             return event;
         };
 
-        let timeout_ms = timeout.as_secs() as u32 * 1000 + (timeout.subsec_nanos() / 1_000_000);
-        let sdl_event = self.sdl_context.event_pump().unwrap().wait_event_timeout(timeout_ms);
+        let timeout_ms = timeout.as_millis() as u32;
+        let sdl_event = self
+            .sdl_context
+            .event_pump()
+            .unwrap()
+            .wait_event_timeout(timeout_ms);
 
         let mut unknown = false;
         let event = self.handle_event(sdl_event, &mut unknown);
-        if unknown { self.poll_event() } else { event }
+        if unknown {
+            self.poll_event()
+        } else {
+            event
+        }
     }
 
     fn poll_event(&mut self) -> Option<Event> {
@@ -261,15 +278,18 @@ impl Sdl2Window {
         if let Some((x, y, timestamp)) = self.mouse_relative {
             self.mouse_relative = None;
             return Some(input::Event::Input(
-                Input::Move(Motion::MouseRelative([x, y])), Some(timestamp)));
+                Input::Move(Motion::MouseRelative([x, y])),
+                Some(timestamp),
+            ));
         }
         None
     }
 
-    fn handle_event(&mut self,
-                    sdl_event: Option<sdl2::event::Event>,
-                    unknown: &mut bool)
-                    -> Option<Event> {
+    fn handle_event(
+        &mut self,
+        sdl_event: Option<sdl2::event::Event>,
+        unknown: &mut bool,
+    ) -> Option<Event> {
         use sdl2::event::{Event, WindowEvent};
         let event = match sdl_event {
             Some(ev) => {
@@ -298,12 +318,23 @@ impl Sdl2Window {
                 if self.automatic_close {
                     self.should_close = true;
                 }
-                return Some(input::Event::Input(Input::Close(CloseArgs), Some(timestamp)));
+                return Some(input::Event::Input(
+                    Input::Close(CloseArgs),
+                    Some(timestamp),
+                ));
             }
-            Event::TextInput { text, timestamp, .. } => {
+            Event::TextInput {
+                text, timestamp, ..
+            } => {
                 return Some(input::Event::Input(Input::Text(text), Some(timestamp)));
             }
-            Event::KeyDown { keycode: Some(key), repeat, scancode, timestamp, .. } => {
+            Event::KeyDown {
+                keycode: Some(key),
+                repeat,
+                scancode,
+                timestamp,
+                ..
+            } => {
                 // SDL2 repeats the key down event.
                 // If the event is the same as last one, ignore it.
                 if repeat {
@@ -313,136 +344,269 @@ impl Sdl2Window {
                 if self.exit_on_esc && key == sdl2::keyboard::Keycode::Escape {
                     self.should_close = true;
                 } else {
-                    return Some(input::Event::Input(Input::Button(ButtonArgs {
-                        state: ButtonState::Press,
-                        button: Button::Keyboard(sdl2_map_key(key)),
-                        scancode: scancode.map(|scode| scode as i32),
-                    }), Some(timestamp)));
+                    return Some(input::Event::Input(
+                        Input::Button(ButtonArgs {
+                            state: ButtonState::Press,
+                            button: Button::Keyboard(sdl2_map_key(key)),
+                            scancode: scancode.map(|scode| scode as i32),
+                        }),
+                        Some(timestamp),
+                    ));
                 }
             }
-            Event::KeyUp { keycode: Some(key), repeat, scancode, timestamp, .. } => {
+            Event::KeyUp {
+                keycode: Some(key),
+                repeat,
+                scancode,
+                timestamp,
+                ..
+            } => {
                 if repeat {
                     return self.poll_event();
                 }
-                return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Release,
-                    button: Button::Keyboard(sdl2_map_key(key)),
-                    scancode: scancode.map(|scode| scode as i32),
-                }), Some(timestamp)));
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Release,
+                        button: Button::Keyboard(sdl2_map_key(key)),
+                        scancode: scancode.map(|scode| scode as i32),
+                    }),
+                    Some(timestamp),
+                ));
             }
-            Event::MouseButtonDown { mouse_btn: button, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Press,
-                    button: Button::Mouse(sdl2_map_mouse(button)),
-                    scancode: None,
-                }), Some(timestamp)));
+            Event::MouseButtonDown {
+                mouse_btn: button,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Press,
+                        button: Button::Mouse(sdl2_map_mouse(button)),
+                        scancode: None,
+                    }),
+                    Some(timestamp),
+                ));
             }
-            Event::MouseButtonUp { mouse_btn: button, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Release,
-                    button: Button::Mouse(sdl2_map_mouse(button)),
-                    scancode: None,
-                }), Some(timestamp)));
+            Event::MouseButtonUp {
+                mouse_btn: button,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Release,
+                        button: Button::Mouse(sdl2_map_mouse(button)),
+                        scancode: None,
+                    }),
+                    Some(timestamp),
+                ));
             }
-            Event::MouseMotion { x, y, xrel: dx, yrel: dy, timestamp, .. } => {
+            Event::MouseMotion {
+                x,
+                y,
+                xrel: dx,
+                yrel: dy,
+                timestamp,
+                ..
+            } => {
                 if self.is_capturing_cursor {
                     // Skip normal mouse movement and emit relative motion only.
                     return Some(input::Event::Input(
                         Input::Move(Motion::MouseRelative([dx as f64, dy as f64])),
-                        Some(timestamp)));
+                        Some(timestamp),
+                    ));
                 }
                 // Send relative move movement next time.
                 self.mouse_relative = Some((dx as f64, dy as f64, timestamp));
                 return Some(input::Event::Input(
                     Input::Move(Motion::MouseCursor([x as f64, y as f64])),
-                    Some(timestamp)));
+                    Some(timestamp),
+                ));
             }
-            Event::MouseWheel { x, y, timestamp, .. } => {
+            Event::MouseWheel {
+                x, y, timestamp, ..
+            } => {
                 return Some(input::Event::Input(
-                    Input::Move(Motion::MouseScroll([x as f64, y as f64])), Some(timestamp)));
+                    Input::Move(Motion::MouseScroll([x as f64, y as f64])),
+                    Some(timestamp),
+                ));
             }
-            Event::JoyAxisMotion { which, axis_idx, value: val, timestamp, .. } => {
+            Event::JoyAxisMotion {
+                which,
+                axis_idx,
+                value: val,
+                timestamp,
+                ..
+            } => {
                 // Axis motion is an absolute value in the range
                 // [-32768, 32767]. Normalize it down to a float.
-                use std::i16::MAX;
-                let normalized_value = val as f64 / MAX as f64;
-                return Some(input::Event::Input(Input::Move(
-                    Motion::ControllerAxis(ControllerAxisArgs::new(
-                    which, axis_idx, normalized_value))), Some(timestamp)));
+                let normalized_value = val as f64 / (i16::MAX) as f64;
+                return Some(input::Event::Input(
+                    Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
+                        which,
+                        axis_idx,
+                        normalized_value,
+                    ))),
+                    Some(timestamp),
+                ));
             }
-            Event::JoyButtonDown { which, button_idx, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Press,
-                    button: Button::Controller(ControllerButton::new(which, button_idx)),
-                    scancode: None,
-                }), Some(timestamp)))
+            Event::JoyButtonDown {
+                which,
+                button_idx,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Press,
+                        button: Button::Controller(ControllerButton::new(which, button_idx)),
+                        scancode: None,
+                    }),
+                    Some(timestamp),
+                ))
             }
-            Event::JoyButtonUp { which, button_idx, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Release,
-                    button: Button::Controller(ControllerButton::new(which, button_idx)),
-                    scancode: None,
-                }), Some(timestamp)))
+            Event::JoyButtonUp {
+                which,
+                button_idx,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Release,
+                        button: Button::Controller(ControllerButton::new(which, button_idx)),
+                        scancode: None,
+                    }),
+                    Some(timestamp),
+                ))
             }
-            Event::JoyHatMotion { which, hat_idx, state, timestamp, .. } => {
-              let state = match state {
-                HatState::Centered => PistonHat::Centered,
-                HatState::Up => PistonHat::Up,
-                HatState::Right => PistonHat::Right,
-                HatState::Down => PistonHat::Down,
-                HatState::Left => PistonHat::Left,
-                HatState::RightUp => PistonHat::RightUp,
-                HatState::RightDown => PistonHat::RightDown,
-                HatState::LeftUp => PistonHat::LeftUp,
-                HatState::LeftDown => PistonHat::LeftDown,
-              };
-              return Some(input::Event::Input(Input::Button(ButtonArgs {
-                    state: ButtonState::Release,
-                    button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
-                    scancode: None,
-                }), Some(timestamp)))
+            Event::JoyHatMotion {
+                which,
+                hat_idx,
+                state,
+                timestamp,
+                ..
+            } => {
+                let state = match state {
+                    HatState::Centered => PistonHat::Centered,
+                    HatState::Up => PistonHat::Up,
+                    HatState::Right => PistonHat::Right,
+                    HatState::Down => PistonHat::Down,
+                    HatState::Left => PistonHat::Left,
+                    HatState::RightUp => PistonHat::RightUp,
+                    HatState::RightDown => PistonHat::RightDown,
+                    HatState::LeftUp => PistonHat::LeftUp,
+                    HatState::LeftDown => PistonHat::LeftDown,
+                };
+                return Some(input::Event::Input(
+                    Input::Button(ButtonArgs {
+                        state: ButtonState::Release,
+                        button: Button::Hat(ControllerHat::new(which, hat_idx, state)),
+                        scancode: None,
+                    }),
+                    Some(timestamp),
+                ));
             }
-            Event::FingerDown { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
-                                                                     finger_id,
-                                                                     [x as f64, y as f64],
-                                                                     pressure as f64,
-                                                                     Touch::Start))),
-                             Some(timestamp)))
+            Event::FingerDown {
+                touch_id,
+                finger_id,
+                x,
+                y,
+                pressure,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Move(Motion::Touch(TouchArgs::new(
+                        touch_id,
+                        finger_id,
+                        [x as f64, y as f64],
+                        pressure as f64,
+                        Touch::Start,
+                    ))),
+                    Some(timestamp),
+                ))
             }
-            Event::FingerMotion { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
-                                                                     finger_id,
-                                                                     [x as f64, y as f64],
-                                                                     pressure as f64,
-                                                                     Touch::Move))),
-                             Some(timestamp)))
+            Event::FingerMotion {
+                touch_id,
+                finger_id,
+                x,
+                y,
+                pressure,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Move(Motion::Touch(TouchArgs::new(
+                        touch_id,
+                        finger_id,
+                        [x as f64, y as f64],
+                        pressure as f64,
+                        Touch::Move,
+                    ))),
+                    Some(timestamp),
+                ))
             }
-            Event::FingerUp { touch_id, finger_id, x, y, pressure, timestamp, .. } => {
-                return Some(input::Event::Input(Input::Move(Motion::Touch(TouchArgs::new(touch_id,
-                                                                     finger_id,
-                                                                     [x as f64, y as f64],
-                                                                     pressure as f64,
-                                                                     Touch::End))),
-                             Some(timestamp)))
+            Event::FingerUp {
+                touch_id,
+                finger_id,
+                x,
+                y,
+                pressure,
+                timestamp,
+                ..
+            } => {
+                return Some(input::Event::Input(
+                    Input::Move(Motion::Touch(TouchArgs::new(
+                        touch_id,
+                        finger_id,
+                        [x as f64, y as f64],
+                        pressure as f64,
+                        Touch::End,
+                    ))),
+                    Some(timestamp),
+                ))
             }
-            Event::Window { win_event: sdl2::event::WindowEvent::Resized(w, h), timestamp, .. } => {
+            Event::Window {
+                win_event: sdl2::event::WindowEvent::Resized(w, h),
+                timestamp,
+                ..
+            } => {
                 let draw_size = self.draw_size();
-                return Some(input::Event::Input(Input::Resize(ResizeArgs {
-                    window_size: [w as f64, h as f64],
-                    draw_size: draw_size.into(),
-                }), Some(timestamp)));
+                return Some(input::Event::Input(
+                    Input::Resize(ResizeArgs {
+                        window_size: [w as f64, h as f64],
+                        draw_size: draw_size.into(),
+                    }),
+                    Some(timestamp),
+                ));
             }
-            Event::Window { win_event: WindowEvent::FocusGained, timestamp, .. } => {
+            Event::Window {
+                win_event: WindowEvent::FocusGained,
+                timestamp,
+                ..
+            } => {
                 return Some(input::Event::Input(Input::Focus(true), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::FocusLost, timestamp, .. } => {
+            Event::Window {
+                win_event: WindowEvent::FocusLost,
+                timestamp,
+                ..
+            } => {
                 return Some(input::Event::Input(Input::Focus(false), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::Enter, timestamp, .. } => {
+            Event::Window {
+                win_event: WindowEvent::Enter,
+                timestamp,
+                ..
+            } => {
                 return Some(input::Event::Input(Input::Cursor(true), Some(timestamp)));
             }
-            Event::Window { win_event: WindowEvent::Leave, timestamp, .. } => {
+            Event::Window {
+                win_event: WindowEvent::Leave,
+                timestamp,
+                ..
+            } => {
                 return Some(input::Event::Input(Input::Cursor(false), Some(timestamp)));
             }
             _ => {
@@ -463,7 +627,9 @@ impl Sdl2Window {
         let dy = cy - s.y();
         if dx != 0 || dy != 0 {
             self.ignore_relative_event = Some((dx, dy));
-            self.sdl_context.mouse().warp_mouse_in_window(&self.window, cx as i32, cy as i32);
+            self.sdl_context
+                .mouse()
+                .warp_mouse_in_window(&self.window, cx, cy);
         }
     }
 }
@@ -492,7 +658,10 @@ impl Window for Sdl2Window {
     }
     fn size(&self) -> Size {
         let (w, h) = self.window.size();
-        Size {width: w as f64, height: h as f64}
+        Size {
+            width: w as f64,
+            height: h as f64,
+        }
     }
     fn wait_event(&mut self) -> Event {
         self.wait_event()
@@ -505,7 +674,10 @@ impl Window for Sdl2Window {
     }
     fn draw_size(&self) -> Size {
         let (w, h) = self.window.drawable_size();
-        Size {width: w as f64, height: h as f64}
+        Size {
+            width: w as f64,
+            height: h as f64,
+        }
     }
 }
 
@@ -550,13 +722,14 @@ impl AdvancedWindow for Sdl2Window {
     }
     fn get_position(&self) -> Option<Position> {
         let (x, y) = self.window.position();
-        Some(Position { x: x, y: y })
+        Some(Position { x, y })
     }
     fn set_position<P: Into<Position>>(&mut self, pos: P) {
         use sdl2::video::WindowPos;
 
         let pos: Position = pos.into();
-        self.window.set_position(WindowPos::Positioned(pos.x), WindowPos::Positioned(pos.y));
+        self.window
+            .set_position(WindowPos::Positioned(pos.x), WindowPos::Positioned(pos.y));
     }
     fn set_size<S: Into<Size>>(&mut self, size: S) {
         let size: Size = size.into();
