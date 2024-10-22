@@ -34,7 +34,7 @@ impl JoystickState {
     fn new(subsystem: sdl2::JoystickSubsystem) -> Self {
         JoystickState {
             joysticks: Vec::new(),
-            subsystem: subsystem,
+            subsystem,
         }
     }
 }
@@ -71,7 +71,7 @@ impl Sdl2Window {
     pub fn new(settings: &WindowSettings) -> Result<Self, Box<dyn Error>> {
         let sdl = sdl2::init()?;
         let video_subsystem = sdl.video()?;
-        Ok(Self::with_subsystem(video_subsystem, settings)?)
+        Self::with_subsystem(video_subsystem, settings)
     }
 
     /// Creates a window with the supplied SDL Video subsystem.
@@ -163,7 +163,7 @@ impl Sdl2Window {
         // Send text input events.
         video_subsystem.text_input().start();
 
-        let context = window.gl_create_context().map_err(|e| format!("{}", e))?;
+        let context = window.gl_create_context()?;
 
         // Load the OpenGL function pointers.
         gl::load_with(|name| video_subsystem.gl_get_proc_address(name) as *const _);
@@ -180,10 +180,10 @@ impl Sdl2Window {
             automatic_close: settings.get_automatic_close(),
             is_capturing_cursor: false,
             ignore_relative_event: None,
-            window: window,
-            context: context,
-            sdl_context: sdl_context,
-            video_subsystem: video_subsystem,
+            window,
+            context,
+            sdl_context,
+            video_subsystem,
             joystick_state: None,
             mouse_relative: None,
             title: settings.get_title(),
@@ -200,12 +200,9 @@ impl Sdl2Window {
     /// Initialize the joystick subsystem. Required before joystick input
     /// events will be returned. Returns the number available or error.
     pub fn init_joysticks(&mut self) -> Result<u32, String> {
-        let subsystem = self.sdl_context.joystick().map_err(|e| format!("{}", e))?;
+        let subsystem = self.sdl_context.joystick()?;
         let mut state = JoystickState::new(subsystem);
-        let available = state
-            .subsystem
-            .num_joysticks()
-            .map_err(|e| format!("{}", e))?;
+        let available = state.subsystem.num_joysticks()?;
 
         // Open all the joysticks
         for id in 0..available {
@@ -239,7 +236,7 @@ impl Sdl2Window {
             return event;
         };
 
-        let timeout_ms = timeout.as_secs() as u32 * 1000 + (timeout.subsec_nanos() / 1_000_000);
+        let timeout_ms = timeout.as_millis() as u32;
         let sdl_event = self
             .sdl_context
             .event_pump()
@@ -443,8 +440,7 @@ impl Sdl2Window {
             } => {
                 // Axis motion is an absolute value in the range
                 // [-32768, 32767]. Normalize it down to a float.
-                use std::i16::MAX;
-                let normalized_value = val as f64 / MAX as f64;
+                let normalized_value = val as f64 / (i16::MAX) as f64;
                 return Some(input::Event::Input(
                     Input::Move(Motion::ControllerAxis(ControllerAxisArgs::new(
                         which,
@@ -633,7 +629,7 @@ impl Sdl2Window {
             self.ignore_relative_event = Some((dx, dy));
             self.sdl_context
                 .mouse()
-                .warp_mouse_in_window(&self.window, cx as i32, cy as i32);
+                .warp_mouse_in_window(&self.window, cx, cy);
         }
     }
 }
@@ -726,7 +722,7 @@ impl AdvancedWindow for Sdl2Window {
     }
     fn get_position(&self) -> Option<Position> {
         let (x, y) = self.window.position();
-        Some(Position { x: x, y: y })
+        Some(Position { x, y })
     }
     fn set_position<P: Into<Position>>(&mut self, pos: P) {
         use sdl2::video::WindowPos;
